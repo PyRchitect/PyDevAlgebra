@@ -1,6 +1,6 @@
 import random as rn
 
-class Tree():
+class TreeNode():
     max_children = 0
 
     def __init__(self,data):
@@ -14,7 +14,7 @@ class Tree():
     def fetchRoot(self):
         fetch_root = self
 
-        if not fetch_root.isRoot(self):
+        if not fetch_root.isRoot():
             fetch_root = fetch_root.parent 
 
         return fetch_root
@@ -28,7 +28,7 @@ class Tree():
     # TO DO: loopLeaves > nakon iter
 
     def parents(self):
-        if self.isRoot(self): return None
+        if self.isRoot(): return None
 
         parents_list = []
         current = self.parent
@@ -39,10 +39,10 @@ class Tree():
         return parents_list
     
     def hasParents(self):
-        return True if not self.parents(self) else False
+        return True if not self.parents() else False
 
     def node_level(self):
-        p = self.parents(self)
+        p = self.parents()
         return 0 if not p else len(p)
     
     def hasChildren(self):
@@ -53,39 +53,39 @@ class Tree():
             yield child
     
     def firstChild(self):
-        if self.isLeaf(self):
+        if self.isLeaf():
             return None
         else:
             return self.children[0]
     
     def isFirstChild(self):
-        if self.isRoot(self):
+        if self.isRoot():
             return True
         else:            
             fc = self.parent.firstChild(self.parent)
             return True if self == fc else False
     
     def lastChild(self):
-        if self.isLeaf(self):
+        if self.isLeaf():
             return None
         else:
             return self.children[-1]
     
     def isLastChild(self):
-        if self.isRoot(self):
+        if self.isRoot():
             return True
         else:            
             lc = self.parent.lastChild(self.parent)
             return True if self == lc else False
 
     def whichChild(self):
-        if self.isRoot(self):
+        if self.isRoot():
             return 0
         else:            
             return self.parent.children.index(self)
 
     def isOnlyChild(self):
-        if self.isRoot(self):
+        if self.isRoot():
             return True
         else:            
             return True if len(self.parent.children) == 1 else False
@@ -93,7 +93,7 @@ class Tree():
     # TO DO: loopSiblings > nakon iter
 
     def addChild(self,child):
-        if len(self.children) == Tree.max_children:
+        if len(self.children) == TreeNode.max_children:
             return None
         else:
             child.parent = self
@@ -127,12 +127,31 @@ class Tree():
 
     # TO DO: LFS
 
-
-
-
-
-class BinaryTree(Tree):
+class BinaryTree(TreeNode):
     max_children = 2
+
+    def left(self):
+        return self.firstChild()
+    
+    def right(self):
+        return self.lastChild()
+
+    def sequential_traversal(self,guide,start,end,step=1):
+
+        if start==end: return None
+
+        yield self
+
+        mid = int((start+end)/2)
+
+        if guide>=start and guide<=mid:
+            nextNode = self.left()            
+        else:
+            nextNode = self.right()
+
+        yield from nextNode.sequential_traversal(nextNode,guide,start,mid,step+1)
+
+    #def populate_tree(levels):
 
 
 
