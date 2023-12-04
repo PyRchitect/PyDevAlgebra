@@ -1,9 +1,10 @@
 import random as rn
+from abc import abstractmethod
 
 class TreeNode():
     max_children = 0
 
-    def __init__(self,data):
+    def __init__(self,data=None):
         self.data = data
         self.parent = None
         self.children = []
@@ -94,7 +95,7 @@ class TreeNode():
 
     def addChild(self,child):
         if len(self.children) == TreeNode.max_children:
-            return None
+            raise IndexError(f"broj djece je maksimalan ({TreeNode.max_children})")
         else:
             child.parent = self
             self.children.append(child)
@@ -140,18 +141,74 @@ class BinaryTree(TreeNode):
 
         if start==end: return None
 
-        yield self
-
         mid = int((start+end)/2)
 
         if guide>=start and guide<=mid:
+            yield (self,0)
             nextNode = self.left()            
         else:
+            yield (self,1)
             nextNode = self.right()
 
         yield from nextNode.sequential_traversal(nextNode,guide,start,mid,step+1)
 
-    #def populate_tree(levels):
+    def populate_tree(self):
+        raise NotImplementedError('svaka podklasa mora definirati vlastiti način')
+
+class ProbabilityBinaryTree(BinaryTree):
+
+    def populate_tree(self,input_method,tree_depth,traversal_method):
+
+        input_random = lambda : rn.random()
+
+        input_user = lambda : input(f" unesi vrijednost: ")       
+
+        def input_file():
+            import sys
+            filepath=sys.path[0]+'\\'+'data.txt'            
+            with open(filepath) as myfile:
+                for line in myfile:
+                    yield float(line)
+
+        input_method_options = {0:input_random,1:input_user,2:input_file}
+
+        current = self
+
+        max = pow(2,tree_depth)
+        
+        for x in range(max):
+            for (current,next_move) in traversal_method(current,x,1,max):
+                # check next move (0 = left, 1 = right):
+                # if no children:
+                # # if next move 0 > add child
+                # if one child:
+                # # if next move 0 > move on
+                # # if next move 1 > add child
+                # if two children:
+                # # if next move 0 > move on
+                # # if next move 1 > move on
+                if len(current.children) <= (next_move):
+                    current.addChild(TreeNode())
+                    # add child with empty data
+
+                    if len(current.children)==1:                        
+                        node_data = input_method_options[input_method]
+                        # if first child added, populate with random probability
+                    else:
+                        node_data = 1 - current.firstChild.data
+                        # if second child, take 1 minus first child probability
+                    current.lastChild.data = node_data
+
+
+
+
+def main():
+
+    pbt = ProbabilityBinaryTree(1)
+    # inicijaliziraj root s data = 1 (vjerojatnost = 1)
+
+    pbt.populate_tree('random_input',3,pbt.sequential_traversal)
+    # napuni stablo s random vjerojatnostima
 
 
 
