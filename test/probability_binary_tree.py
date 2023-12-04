@@ -2,7 +2,7 @@ import random as rn
 import sys
 
 rounding = 4
-test_trial_probability = 0.5
+test_trial_probability = 0.4
 
 # Tree Class
 
@@ -325,7 +325,7 @@ def main():
         from scipy.stats import binom
         for i,x in enumerate(range(depth+1)): 
             p = binom.pmf(k=x,n=depth,p=test_trial_probability)
-            print(f"[{depth-i}xL,{i}xD] P = {p:.{rounding}f}")
+            print(f"[{i}xL,{depth-i}xD] P = {p:.{rounding}f}")
 
     test_binomial()
 
