@@ -2,6 +2,7 @@ import random as rn
 import sys
 
 rounding = 4
+test_trial_probability = 0.5
 
 # Tree Class
 
@@ -12,6 +13,7 @@ class TreeNode():
         self.data = data
         self.parent = None
         self.children = []
+        self.trajectory = []
 
     def isRoot(self):
         return True if self.parent == None else False
@@ -138,7 +140,7 @@ class BinaryTreeNode(TreeNode):
     def printBinaryTree(node,level=0):
         if node != None:
             BinaryTreeNode.printBinaryTree(node.left(),level+1)
-            print(f"{' '*8 * level} -> {node.data:.{rounding}f}")
+            print(f"{' '*8 * level} -> {node.data:.{rounding}f}, {node.trajectory}")
             BinaryTreeNode.printBinaryTree(node.right(),level+1)
 
 
@@ -170,7 +172,11 @@ class PBinaryTreeNode(BinaryTreeNode):
         # 0. fixed - i.e. binomial distribution
         if probability_assignment == 0:
             # set probability beforehand
-            fixed_probability = input_method_options[input_method]()
+            # fixed_probability = input_method_options[input_method]()
+
+            # TEST
+            fixed_probability = test_trial_probability
+            # TEST
         
         # 1. dynamic - custom distribution
         # require input for each node       
@@ -217,6 +223,7 @@ class PBinaryTreeNode(BinaryTreeNode):
                         node_data = 1 - current.firstChild().data
                         # if second child added, take 1 minus first child
                     current.lastChild().data = node_data
+                    current.lastChild().trajectory = current.trajectory+[next_move]
 
     def calculate_trajectories(root_node,tree_depth,chosen_trajectories=None):
 
@@ -225,18 +232,21 @@ class PBinaryTreeNode(BinaryTreeNode):
 
         checklist = chosen_trajectories or list(range(*range_args))
 
-        calculated_trajectories=[]
+        calculated_trajectories=[[],[]]
 
         for x in checklist:
             product = 1
+            sum = 0
 
             for (current,next_move) in BinaryTreeNode.sequential_search(root_node,x,*search_args):
                 if next_move == 0:
                     product *= current.left().data
                 else:
                     product *= current.right().data
+                sum+=next_move
 
-            calculated_trajectories.append(product)
+            calculated_trajectories[0].append(product)
+            calculated_trajectories[1].append(sum)
         
         return calculated_trajectories
 
@@ -246,35 +256,78 @@ class PBinaryTreeNode(BinaryTreeNode):
 
 def print_trajectories(chosen,calculated):    
             
-    for t in zip(chosen,calculated):    
-        print(f"Trajectory {t[0]}: P = {t[1]:.{rounding}f}")    
+    for t in zip(chosen,*calculated):    
+        print(f"Trajectory {t[0]}: P = {t[1]:.{rounding}f}, sum = {t[2]}")    
 
 def main():
 
-    pbt = PBinaryTreeNode(1)
-    depth = 4
+    def test_random():
 
-    pbt.populate_tree(0,1,depth,0)
+        print("\n TEST: RANDOM")
 
-    print("\n> tree:")
-    PBinaryTreeNode.printBinaryTree(pbt.fetchRoot())
+        pbt = PBinaryTreeNode(1)
+        depth = 3
 
-    # CALCULATE TRAJECTORIES
+        pbt.populate_tree(0,1,depth,0)
 
-    print("\n> example: all")
-    custom_trajectories = list(range(1,pow(2,depth)+1))
-    result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth)
-    print_trajectories(custom_trajectories,result)
+        print("\n> tree:")
+        PBinaryTreeNode.printBinaryTree(pbt.fetchRoot())
 
-    print("\n> example: hardcode 1,4")
-    custom_trajectories = [1,4]
-    result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth,custom_trajectories)
-    print_trajectories(custom_trajectories,result)
+        # CALCULATE TRAJECTORIES
 
-    print("\n> example: comprehension - evens")
-    custom_trajectories = [x for x in range(1,pow(2,depth)+1) if x%2==0]
-    result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth,custom_trajectories)
-    print_trajectories(custom_trajectories,result)
+        print("\n> example: all")
+        custom_trajectories = list(range(1,pow(2,depth)+1))
+        result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth)
+        print_trajectories(custom_trajectories,result)
+
+        print("\n> example: hardcode 1,4")
+        custom_trajectories = [1,4]
+        result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth,custom_trajectories)
+        print_trajectories(custom_trajectories,result)
+
+        print("\n> example: comprehension - evens")
+        custom_trajectories = [x for x in range(1,pow(2,depth)+1) if x%2==0]
+        result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth,custom_trajectories)
+        print_trajectories(custom_trajectories,result)
+    
+    def test_binomial():        
+
+        print("\n TEST: BINOMIAL")
+
+        pbt = PBinaryTreeNode(1)
+        depth = 4
+
+        pbt.populate_tree(0,0,depth,0)
+
+        print("\n> STABLO (VJEROJATNOSTI):")
+        PBinaryTreeNode.printBinaryTree(pbt.fetchRoot())
+
+        # CALCULATE TRAJECTORIES
+
+        print("\n> REZULTAT (TRAJEKTORIJE):")
+        custom_trajectories = list(range(1,pow(2,depth)+1))
+        result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth)
+        print_trajectories(custom_trajectories,result)
+
+        # SUM OVER TRAJECTORIES WITH SAME SUM (same number of L and D)
+
+        print("\n> REZULTAT (KUMULATIV):")
+        cumulative = [0]*(depth+1)
+
+        for x in zip(result[0],result[1]): cumulative[x[1]]+=x[0]
+        for i,c in enumerate(cumulative): print(f"[{depth-i}xL,{i}xD] P = {c:.{rounding}f}")
+
+        # from numpy import random as np_rd
+        # x = np_rd.binomial(n=depth,p=0.5,size=depth)
+        # print(x)
+
+        print("\n> TEST (BINOMIAL):")
+        from scipy.stats import binom
+        for i,x in enumerate(range(depth+1)): 
+            p = binom.pmf(k=x,n=depth,p=test_trial_probability)
+            print(f"[{depth-i}xL,{i}xD] P = {p:.{rounding}f}")
+
+    test_binomial()
 
 
 
