@@ -1,5 +1,7 @@
 # https://www.geeksforgeeks.org/finding-optimal-move-in-tic-tac-toe-using-minimax-algorithm-in-game-theory/
 
+# https://levelup.gitconnected.com/mastering-tic-tac-toe-with-minimax-algorithm-3394d65fa88f
+
 # function findBestMove(board):
 #     bestMove = NULL
 #     for each move in board :
@@ -9,14 +11,14 @@
 
 # function minimax(board, depth, isMaximizingPlayer):
 
-#     if current board state is a terminal state :
+#     if current board state is a terminal state:
 #         return value of the board
     
 #     if isMaximizingPlayer :
 #         bestVal = -INFINITY 
 #         for each move in board :
 #             value = minimax(board, depth+1, false)
-#             bestVal = max( bestVal, value) 
+#             bestVal = max(bestVal, value) 
 #         return bestVal
 
 #     else :
@@ -32,117 +34,112 @@
 #             return true
 #     return false
 
-# Python3 program to find the next optimal move for a player 
-player = 'x'
-opponent = 'o'
-empty = '-'
+import math
 
-# This function returns true if there are moves 
-# remaining on the board. It returns false if 
-# there are no moves left to play. 
+px = 'X' # maximizer
+po = 'O' # minimizer
+pn = '-' # prazna
+
 def isMovesLeft(board): 
+    # vraća true/false ako se može/ne može igrati još poteza
+    # testira ima li praznih ćelija, ako nađe neku vraća true
 
 	for i in range(3): 
 		for j in range(3): 
-			if (board[i][j] == empty): return True
+			if (board[i][j] == pn): return True
 
 	return False
 
-# This is the evaluation function as discussed 
-# in the previous article ( http://goo.gl/sJgv68 ) 
-def evaluate(b) : 
+def evaluate(board):
+    # evaluation function: tko pobjeđuje? b[3][3] je TTT ploča
+    # MOŽE SE OPTIMIZIRATI I SKRATITI, ali nebitno je za sada
 	
-	for row in range(3): # Checking for Rows
-		if (b[row][0] == b[row][1] and b[row][1] == b[row][2]):
-			if (b[row][0] == player): return 10
-			elif (b[row][0] == opponent): return -10
+	for row in range(3): # Rows
+		if (board[row][0] == board[row][1] and board[row][1] == board[row][2]):
+			if (board[row][0] == px): return 1
+			elif (board[row][0] == po): return -1
 
-	for col in range(3): # Checking for Cols
-		if (b[0][col] == b[1][col] and b[1][col] == b[2][col]):
-			if (b[0][col] == player): return 10
-			elif (b[0][col] == opponent): return -10
+	for col in range(3): # Cols
+		if (board[0][col] == board[1][col] and board[1][col] == board[2][col]):
+			if (board[0][col] == px): return 1
+			elif (board[0][col] == po): return -1
 
-	if (b[0][0] == b[1][1] and b[1][1] == b[2][2]):  # Checking for Diag1
-		if (b[0][0] == player): return 10
-		elif (b[0][0] == opponent): return -10
+	if (board[0][0] == board[1][1] and board[1][1] == board[2][2]): # Diag(\)
+		if (board[0][0] == px): return 1
+		elif (board[0][0] == po): return -1
 
-	if (b[0][2] == b[1][1] and b[1][1] == b[2][0]): # Checking for Diag2 
-		if (b[0][2] == player): return 10
-		elif (b[0][2] == opponent): return -10
+	if (board[0][2] == board[1][1] and board[1][1] == board[2][0]): # Diag(/)
+		if (board[0][2] == px): return 1
+		elif (board[0][2] == po): return -1
 
-	return 0 # if none of them have won
+	return 0 # ako si tu, nitko nije pobijedio
 
-# This is the minimax function. It considers all the possible ways
-# the game can go and returns the value of the board
-def minimax(board, depth, isMax) : 
-	score = evaluate(board) 
-
-	# If Maximizer has won the game return evaluated score
-	if (score == 10): return score
-	# If Minimizer has won the game return evaluated score
-	if (score == -10): return score
-	# If there are no more moves and no winner then it is a tie
+def minimax(board, depth, isMax):
+    # minimax function: gleda sve načine na koje se ploča
+    # može razviti i vraća vrijednost ploče
+	score = evaluate(board)	
+	if (score == 1): return score # Maximizer je pobijedio
+	if (score ==-1): return score # Minimizer je pobijedio
+	# nema više poteza, nitko nije pobijedio > neriješeno
 	if (isMovesLeft(board) == False): return 0
 	
-	if (isMax): # If this maximizer's move
-		best = -1000
-		# Traverse all cells 
+	if (isMax): # Ako je Maximizer na potezu
+		best = -math.inf
 		for i in range(3):
 			for j in range(3):
-				if (board[i][j]==empty): # Check if cell is empty 
-					board[i][j] = player # Make the move
-					# Call minimax recursively and choose the maximum value 
+				if (board[i][j]==pn): # ćelija prazna?
+					board[i][j] = px # napravi potez
+					# minimax rekurzivno > odaberi max vrijednost 
 					best = max(best,minimax(board,depth + 1,not isMax))
-					board[i][j] = empty # Undo the move
+					board[i][j] = pn # vrati potez nakon testa
 		return best
 	
-	else: # If this minimizer's move
-		best = 1000
-		# Traverse all cells 
+	else:  # Ako je Minimizer na potezu
+		best = math.inf
 		for i in range(3):		 
 			for j in range(3):				
-				if (board[i][j] == empty): # Check if cell is empty									
-					board[i][j] = opponent # Make the move 
-					# Call minimax recursively and choose the minimum value 
-					best = min(best, minimax(board, depth + 1, not isMax))					
-					board[i][j] = empty # Undo the move
+				if (board[i][j] == pn): # ćelija prazna?
+					board[i][j] = po # napravi potez
+					# minimax rekurzivno > odaberi min vrijednost
+					best = min(best, minimax(board, depth + 1, not isMax))
+					board[i][j] = pn # vrati potez nakon testa
 		return best 
 
-# This will return the best possible move for the player
 def findBestMove(board) : 
-	bestVal = -1000
-	bestMove = (-1, -1)
-	# Traverse all cells, evaluate minimax function for
-    # all empty cells and return the cell with optimal value. 
+	# vraća najbolji potez prema minimax algoritmu
+	bestScore = -math.inf
+	bestMove = None
+	# evaluate minimax function za sve prazne ćelije, vrati optimalnu
 	for i in range(3):
 		for j in range(3):			
-			if (board[i][j]==empty): # Check if cell is empty				
-				board[i][j] = player # Make the move
-				# compute evaluation function for this move. 
-				moveVal = minimax(board, 0, False)
-				board[i][j] = empty # Undo the move
-
-				# If the value of the current move is 
-				# more than the best value, then update best/ 
-				if (moveVal > bestVal):				 
+			if board[i][j] == pn: # ćelija prazna?
+				board[i][j] = px # napravi potez				
+				score = minimax(board, 0, False) # evaluate
+				# TEST
+				print(i,j,board[i][j],score)
+				# TEST
+				board[i][j] = pn # vrati potez nakon testa
+				# ako je vrijednost veća od trenutnog najboljeg, ažuriraj
+				if (score > bestScore):				 
 					bestMove = (i, j) 
-					bestVal = moveVal 
+					bestScore = score
 
-	print("The value of the best Move is :", bestVal) 
+	# TEST
+	print("Vrijednost najboljeg poteza: ", bestScore) 
+	# TEST
 	print() 
-	return bestMove 
+	return bestMove
 
-def main():
+def main_test():
     # Driver code 
     board = [ 
-        [ 'x', 'o', 'x' ], 
-        [ 'o', 'o', 'x' ], 
-        [ '_', '_', '_' ] 
-    ] 
+        [px,po,px], 
+        [po,po,px], 
+        [pn,pn,pn]]
 
     bestMove = findBestMove(board) 
 
     print("The Optimal Move is :") 
     print("ROW:", bestMove[0], " COL:", bestMove[1])
 
-main()
+main_test()

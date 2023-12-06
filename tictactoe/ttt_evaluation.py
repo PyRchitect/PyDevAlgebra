@@ -28,8 +28,20 @@ def evaluate(b):
 
 # Driver code 
 if __name__ == "__main__":
-	board = [['x', '_', 'o'], 
-			['_', 'x', 'o'], 
-			['_', '_', 'x']]	
-	value = evaluate(board) 
+	board = [['x', '-', 'o'], 
+			['-', 'x', 'o'], 
+			['-', '-', '-']]
+	value = evaluate(board)
+	print("The value of this board is", value)
+
+	board = [['x', '-', 'o'], 
+			['-', 'x', 'o'], 
+			['-', '-', 'o']]
+	value = evaluate(board)
+	print("The value of this board is", value)
+	board = [['x', '-', 'o'], 
+			['-', 'x', 'o'], 
+			['-', '-', 'x']]
+	
+	value = evaluate(board)  
 	print("The value of this board is", value)
