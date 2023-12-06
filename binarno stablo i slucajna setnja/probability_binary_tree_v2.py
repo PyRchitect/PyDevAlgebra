@@ -14,6 +14,9 @@ class TreeNode():
         self.parent = None
         self.children = []
         self.trajectory = []
+    
+        self.walk_methods = {}
+        # FROM HERE: expand to DFS, BFS, LS, ...
 
     def isRoot(self):
         return True if self.parent == None else False
@@ -103,12 +106,77 @@ class TreeNode():
     # TO DO: BFS
     # TO DO: LS
 
+    def input_methods(self,assign_type):
+        # (0, zadana vrijednost)
+        # (1, random funkcija)
+        # (2, type funkcija)
+        # (3, source filepath)
+
+        # INPUT METHODS (random, input, file):
+
+        # 0. fixed assignment, receive parameter
+        if assign_type[0] == 0: return lambda : assign_type[1]
+
+        # 1. simple random assignment, float with n decimal places
+        if assign_type[0] == 1: return lambda : round(assign_type[1](),rounding)
+
+        # 2. expects user input
+        if assign_type[0] == 2: return lambda : assign_type[1](input(f"unesi vrijednost: "))
+
+        # 3. expects input from file
+        if assign_type[0] == 3: return lambda : [line.rstrip() for line in open(assign_type[1])]
+        
+        return (NotImplementedError, "ne postoji tip unošenja")
+        # FROM HERE: expand to download from service, from SQL DB, from XL, ...
+
+    def assign_action(self):
+        return (NotImplementedError, "svaka potklasa definira svoj assignment")
+
+    def assign_to_node(self, assign_type, assign_mode, node_data):
+        self.addChild(self.__class__())
+
+        if assign_mode != 0:
+            # if fixed, already set beforehand / if dynamic, set for this node
+            node_data = self.assign_action(self,assign_type,node_data)
+        
+        return node_data
+
+
+    def populate_tree(self,assign_input,assign_mode,tree_depth,search_method):        
+
+        # ASSIGNMENT MODE (0 = fixed, 1 = dynamic):
+        if assign_mode == 0:
+            # 0. fixed > set value for all beforehand
+            node_data = self.input_methods(assign_input)()
+        else:
+            # 1. dynamic > require input for each node
+            node_data = None
+
+        # SEARCH METHODS (custom for each type)
+        if len(self.walk_methods) == 0:
+            raise (NotImplementedError, "metode pretraživanja nisu definirane")
+        
+        start_node = self
+        # just in case:
+        start_node.makeRoot()
+        start_node.children = []
+
+        self.walk_methods[search_method](
+            start_node, tree_depth, 'assign', assign_input, (assign_mode,node_data))
+
 
 
 # Binary Tree Class
 
 class BinaryTreeNode(TreeNode):
     max_children = 2
+
+    def __init__(self,data=None):
+        TreeNode.__init__(self,data)
+
+        self.walk_methods =   {
+                                    0:BinaryTreeNode.sequential_walk
+                                }
 
     def left(self): return self.firstChild()
 
@@ -129,8 +197,23 @@ class BinaryTreeNode(TreeNode):
             yield (node,1)
             yield from BinaryTreeNode.sequential_search(node.right(),guide,mid+1,end,step+1)
 
-    def populate_tree(self):
-        raise NotImplementedError('svaka podklasa mora definirati vlastiti način')
+    def sequential_walk(start_node,tree_depth,op,op_type,op_mode):
+        # operation = type of operation (assign, read, delete, ...)
+        # operation_type = input handling (fixed, rnd, input, file, ...)
+        # operation_mode = (mode, value)
+        # > mode = fixed (set beforehand) / dynamic (per node)
+        # > value = node_value if fixed, else None
+
+        for x in list(1,pow(2,tree_depth)+1):
+            for (current,next_move) in BinaryTreeNode.sequential_search(start_node,x,1,pow(2,tree_depth)):
+                if len(current.children) <= (next_move):
+                    
+                    # DALJE OVISI O TIPU OP:
+
+                    if op == 'assign':
+                        node_data = self.assign_to_node(op_type,*op_mode)
+                        current.lastChild().data = node_data
+                        current.lastChild().trajectory = current.trajectory+[next_move]
 
     @staticmethod
     def printBinaryTree(node,level=0):
@@ -139,87 +222,19 @@ class BinaryTreeNode(TreeNode):
             print(f"{' '*8 * level} -> {node.data:.{rounding}f}, {node.trajectory}")
             BinaryTreeNode.printBinaryTree(node.right(),level+1)
 
-
-
 # Probability Binary Tree Class        
 
 class PBinaryTreeNode(BinaryTreeNode):
 
-    def populate_tree(self,input_method,probability_assignment,tree_depth,search_method):
+    def assign_action(self,assign_type,node_data):
+        if self.children[0].isOnlyChild():
+            # if first child added, populate with chosen method
+            node_data = self.input_methods(assign_type)[1]()
+        else:
+            # if second child added, take 1 minus first child
+            node_data = 1 - self.firstChild().data
 
-        # INPUT METHODS (random, input, file):
-
-        # 0. simple random assignment, float with 2 decimal places
-        input_random = lambda : round(rn.random(),rounding)
-
-        # 1. expects user input
-        input_user = lambda : float(input(f" unesi vrijednost: "))
-
-        # 2. expects input from file
-        def input_file():           
-            with open(sys.path[0]+'\\'+'data.txt') as f: # TEMP, nebitno
-                for l in f: yield float(l)
-
-        input_method_options = {0:input_random,1:input_user,2:input_file}
-        # FROM HERE: expand to download from service, from SQL DB, from XL, ...
-
-        # PROBABILITY ASSIGNMENT (fixed, dynamic):
-
-        # 0. fixed - i.e. binomial distribution
-        if probability_assignment == 0:
-            # set probability beforehand
-            fixed_probability = input_method_options[input_method]()
-
-            # TEST
-            # fixed_probability = test_trial_probability
-            # TEST
-        
-        # 1. dynamic - custom distribution
-        # require input for each node       
-
-        # SEARCH METHODS (sequential, ... DFS, BFS, LS)
-        if search_method == 0:
-            search_args = (1,pow(2,tree_depth))     # true range for guide
-            range_args = (1,pow(2,tree_depth)+1)    # ! range needs +1 (last)
-
-        search_method_options = {0:BinaryTreeNode.sequential_search}
-        # FROM HERE: expand to DFS, BFS, LS, ...
-
-        start_node = self
-        # just in case:
-        start_node.makeRoot()
-        start_node.children = []
-
-        for x in list(range(*range_args)):
-            for (current,next_move) in search_method_options[search_method](start_node,x,*search_args):
-                if len(current.children) <= (next_move):
-                    # check next move (0 = left, 1 = right):
-                    # if no children:
-                    # # if next move 0 > add child
-                    # # if next move 1 > add child
-                    # if one child:
-                    # # if next move 0 > move on
-                    # # if next move 1 > add child
-                    # if two children:
-                    # # if next move 0 > move on
-                    # # if next move 1 > move on
-                    current.addChild(PBinaryTreeNode())
-                    # add child with empty data
-
-                    # if len(current.children)==1:
-                    if current.children[0].isOnlyChild():
-                        # if first child added, populate with chosen method
-                        if probability_assignment == 0:
-                            # if fixed, assign it to node
-                            node_data = fixed_probability
-                        else:
-                            # if dynamic, set for this node
-                            node_data = input_method_options[input_method]()
-                    else:
-                        node_data = 1 - current.firstChild().data
-                        # if second child added, take 1 minus first child
-                    current.lastChild().data = node_data
-                    current.lastChild().trajectory = current.trajectory+[next_move]
+        return node_data
 
     def calculate_trajectories(root_node,tree_depth,chosen_trajectories=None):
 
@@ -264,27 +279,27 @@ def main():
         pbt = PBinaryTreeNode(1)
         depth = 3
 
-        pbt.populate_tree(0,1,depth,0)
+        pbt.populate_tree((0,0.5),0,depth,0)
 
         print("\n> tree:")
         PBinaryTreeNode.printBinaryTree(pbt.fetchRoot())
 
         # CALCULATE TRAJECTORIES
 
-        print("\n> example: all")
-        custom_trajectories = list(range(1,pow(2,depth)+1))
-        result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth)
-        print_trajectories(custom_trajectories,result)
+        # print("\n> example: all")
+        # custom_trajectories = list(range(1,pow(2,depth)+1))
+        # result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth)
+        # print_trajectories(custom_trajectories,result)
 
-        print("\n> example: hardcode 1,4")
-        custom_trajectories = [1,4]
-        result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth,custom_trajectories)
-        print_trajectories(custom_trajectories,result)
+        # print("\n> example: hardcode 1,4")
+        # custom_trajectories = [1,4]
+        # result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth,custom_trajectories)
+        # print_trajectories(custom_trajectories,result)
 
-        print("\n> example: comprehension - evens")
-        custom_trajectories = [x for x in range(1,pow(2,depth)+1) if x%2==0]
-        result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth,custom_trajectories)
-        print_trajectories(custom_trajectories,result)
+        # print("\n> example: comprehension - evens")
+        # custom_trajectories = [x for x in range(1,pow(2,depth)+1) if x%2==0]
+        # result = PBinaryTreeNode.calculate_trajectories(pbt.fetchRoot(),depth,custom_trajectories)
+        # print_trajectories(custom_trajectories,result)
     
     def test_binomial():        
 
@@ -323,9 +338,9 @@ def main():
             p = binom.pmf(k=x,n=depth,p=test_trial_probability)
             print(f"[{i}xL,{depth-i}xD] P = {p:.{rounding}f}")
 
-    # test_random()
+    test_random()
 
-    test_binomial()
+    # test_binomial()
 
 main()
 # pogodi_broj_main()

@@ -187,7 +187,7 @@ def main():
 	while new_game:
 		play(name_player,name_opponent)
 		# TO DO: running score
-		ask_new_game = input("\n> nova igra? (Y/N) ")
+		ask_new_game = input("\n> nova igra? (Y/N) ").upper()
 		if ask_new_game == 'N':
 			new_game = False
 		elif ask_new_game == 'Y':
