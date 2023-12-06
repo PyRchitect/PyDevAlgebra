@@ -204,14 +204,14 @@ class BinaryTreeNode(TreeNode):
         # > mode = fixed (set beforehand) / dynamic (per node)
         # > value = node_value if fixed, else None
 
-        for x in list(1,pow(2,tree_depth)+1):
+        for x in list(range(1,pow(2,tree_depth)+1)):
             for (current,next_move) in BinaryTreeNode.sequential_search(start_node,x,1,pow(2,tree_depth)):
                 if len(current.children) <= (next_move):
                     
                     # DALJE OVISI O TIPU OP:
 
                     if op == 'assign':
-                        node_data = self.assign_to_node(op_type,*op_mode)
+                        node_data = start_node.assign_to_node(op_type,*op_mode)
                         current.lastChild().data = node_data
                         current.lastChild().trajectory = current.trajectory+[next_move]
 
