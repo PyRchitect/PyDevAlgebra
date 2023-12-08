@@ -1,6 +1,8 @@
 import math
 import operator
 
+NUM_PLAYERS = 2
+
 P1 = 'X' # maximizer
 P2 = 'O' # minimizer
 P3 = '-' # prazna
@@ -34,8 +36,14 @@ def is_moves_left(board):
 	return False
 
 def evaluate(board):
-	# evaluation function: tko pobjeđuje? b[3][3] je TTT ploča
-	# MOŽE SE OPTIMIZIRATI I SKRATITI, ali nebitno je za sada
+	walk_direction = [[[1],[-1]],[[1],[0]],[[1],[1]],[[0],[1]]]
+	def board_walk(board,x_pos,y_pos,dir): # direction [x][y]		
+		return board[x_pos+dir[0]][y_pos+dir[1]]
+
+	# rows, 
+	# rows in transpose, 
+	# 1st row in switch ii>i0 
+	# 1st row in switch ii>i0 in transpose
 
 	for row in range(3): # Rows
 		if (board[row][0] == board[row][1] and board[row][1] == board[row][2]):
@@ -65,60 +73,37 @@ def evaluate(board):
 
 	return 0 # ako si tu, nitko nije pobijedio
 
-def minimax(board, depth, is_max):
-	# minimax function: gleda sve načine na koje se
-	# ploča može razviti i vraća vrijednost ploče
+def minimax(board,player_turn):
+
 	score = evaluate(board)
-	if (score == 1):
-		return score # Maximizer je pobijedio
-	if (score ==-1):
-		return score # Minimizer je pobijedio
-	# nema više poteza, nitko nije pobijedio > neriješeno
+	if (score != 0):
+		return score # netko je pobijedio
 	if (not is_moves_left(board)):
-		return 0
+		return 0 # nema više poteza i nitko nije pobijedio > neriješeno
 
-	if is_max: # Ako je Maximizer na potezu
+	if Player.minimax_setting[player_turn] == 'max': # Ako je Maximizer na potezu
 		best = -math.inf
-		for i in range(3):
-			for j in range(3):
-				if board[i][j] == Player.marks[-1]: # ćelija prazna?
-					board[i][j] = Player.marks[0] # napravi potez
-					# minimax rekurzivno > odaberi max vrijednost
-					best = max(best,minimax(board,depth + 1,not is_max))
-					board[i][j] = Player.marks[-1] # vrati potez nakon testa
-		return best
+		best_func = max
+	else: # Ako je Minimizer na potezu
+		best = math.inf
+		best_func = min
 
-	# if is_max: # Ako je Maximizer na potezu
-	# 	best = -math.inf
-	# 	for i in range(3):
-	# 		for j in range(3):
-	# 			if board[i][j] == Player.marks[-1]: # ćelija prazna?
-	# 				board[i][j] = Player.marks[0] # napravi potez
-	# 				# minimax rekurzivno > odaberi max vrijednost
-	# 				best = max(best,minimax(board,depth + 1,not is_max))
-	# 				board[i][j] = Player.marks[-1] # vrati potez nakon testa
-	# 	return best
+	for i in range(3):
+		for j in range(3):
+			if board[i][j] == Player.marks[-1]: # ćelija prazna?
+				board[i][j] = Player.marks[player_turn] # napravi potez
+				best = best_func(best,minimax(board,Player.switch_player(player_turn)))
+				board[i][j] = Player.marks[-1] # vrati potez nakon testa
 
-	# else:  # Ako je Minimizer na potezu
-	# 	best = math.inf
-	# 	for i in range(3):
-	# 		for j in range(3):
-	# 			if (board[i][j] == Player.marks[-1]): # ćelija prazna?
-	# 				board[i][j] = Player.marks[1] # napravi potez
-	# 				# minimax rekurzivno > odaberi min vrijednost
-	# 				best = min(best, minimax(board, depth + 1, not is_max))
-	# 				board[i][j] = Player.marks[-1] # vrati potez nakon testa
-	# 	return best
+	return best
 
-def find_best_move(board,player):
+def find_best_move(board,player_turn):
 	# vraća najbolji potez prema minimax algoritmu
-	if Player.minimax_setting[player.player_index] == 'max':
+	if Player.minimax_setting[player_turn] == 'max':
 		best_score = -math.inf
-		is_max = False
 		compare = operator.gt
-	elif Player.minimax_setting[player.player_index] == 'min':
+	elif Player.minimax_setting[player_turn] == 'min':
 		best_score = math.inf
-		is_max = True
 		compare = operator.lt
 
 	best_move = None
@@ -126,8 +111,8 @@ def find_best_move(board,player):
 	for i in range(3):
 		for j in range(3):
 			if board[i][j] == Player.marks[-1]: # ćelija prazna?
-				board[i][j] = Player.marks[player.player_index] # napravi potez
-				score = minimax(board, 0, is_max)
+				board[i][j] = Player.marks[player_turn] # napravi potez
+				score = minimax(board,Player.switch_player(player_turn))
 				board[i][j] = Player.marks[-1]	# vrati potez nakon testa
 				if compare(score,best_score):	# ažuriraj ako je potez bolji
 					best_move = (i, j)
@@ -148,6 +133,10 @@ class Player():
 		self.player_type = player_type
 		self.player_name = player_name
 		self.player_index = player_index
+
+	@staticmethod
+	def switch_player(index):
+		return index +1 if index < NUM_PLAYERS-1 else 0
 
 def play(players):
 
@@ -184,9 +173,6 @@ def play(players):
 
 		return (True,board,"izjednaceno!")
 
-	def switch_player(index):
-		return 1 if index==0 else 0
-
 	player_turn = 0
 	move_count = 1
 
@@ -207,7 +193,7 @@ def play(players):
 				continue
 		else:
 			print()
-			(move_test,move) = (True,find_best_move(board,players[player_turn]))
+			(move_test,move) = (True,find_best_move(board,player_turn))
 
 		(win_flag,board,poruka) = move_display(move,board,players[player_turn])
 		print(poruka)
@@ -215,10 +201,11 @@ def play(players):
 		if win_flag:
 			break
 
-		player_turn = switch_player(player_turn)
+		player_turn = Player.switch_player(player_turn)
 		move_count += 1
 
 def assign_value(msg_input,expected_type,check_list,msg_error):
+
 	parameter = None
 	while not parameter:
 		parameter = expected_type(input(msg_input))
@@ -232,8 +219,8 @@ def assign_value(msg_input,expected_type,check_list,msg_error):
 
 def main():
 
-	def initialize_players(num_players):
-		players = [Player(x) for x in range(num_players)]
+	def initialize_players():
+		players = [Player(x) for x in range(NUM_PLAYERS)]
 
 		for (index,player) in enumerate(players):
 			player.player_type = assign_value(
@@ -243,7 +230,7 @@ def main():
 
 		return players
 
-	players = initialize_players(2)
+	players = initialize_players()
 
 	print(f"\n{players[0].player_name} VS {players[1].player_name}\n")
 
