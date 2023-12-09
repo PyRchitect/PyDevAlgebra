@@ -1,81 +1,92 @@
 import math
 import operator
 
-NUM_PLAYERS = 2
-BOARD_SIZE = 3
+class TTTBoard():
+	empty = '-'
+	num_players = 2
+	board_size = 3
 
-# TO DO: od board napravi klasu
-# > premjesti: praznu oznaku, inicijalizaciju, display, update, moves_left
+	def __init__(self):
+		self.status = [[TTTBoard.empty for x in range(3)] for y in range(3)]
 
-def initialize_board():
-	return [[Player.marks[-1] for x in range(3)] for y in range(3)]
+	def display(self):
+		board_display = ''
 
-def display_board(board):
-	board_display = ''
+		for i in range(3):
+			board_display+='\n| '
+			for j in range(3):
+				board_display+=f'{self.status[i][j]} | '
 
-	for i in range(3):
-		board_display+='\n| '
-		for j in range(3):
-			board_display+=f'{board[i][j]} | '
+		print(board_display[1:])
 
-	print(board_display[1:])
+	def update(self,row,col,player):
+		if self.status[row][col]==TTTBoard.empty:
+			self.status[row][col]=Player.marks[player.player_index]
+		else:
+			raise TypeError
 
-def update(board,row,col,player):
-	if board[row][col]==Player.marks[-1]:
-		board[row][col]=Player.marks[player.player_index]
-		return board
-
-	raise TypeError
-
-def is_moves_left(board):
-	for i in range(3):
-		for j in range(3):
-			if (board[i][j] == Player.marks[-1]):
-				return True
-
-	return False
-
-def evaluate(b):		# b = board [3][3]
-
-	walk_direction = 	[				# [move_r, move_c]
-							[-1,1],		# diag - up
-							[0,1],		# right
-							[1,1],		# diag - down
-							[1,0]		# down
-						]
-	test_directions = 	[									# test dir. per cell
-							[[1,2,3],	[3],	[3]],		# [r,dd,d],	[d],	[d]
-							[[1],		[],		[]],		# [r],		[],		[]
-							[[0,1],		[],		[]]			# [r,du],	[],		[]
-						]									# walk_direction[d]
-
-	def do_test(b,r,c):
-		if test_directions[r][c]:
-			for d in test_directions[r][c]:
-				if board_walk(b,r,c,walk_direction[d]):
+	def is_moves_left(self):
+		for i in range(3):
+			for j in range(3):
+				if (self.status[i][j] == TTTBoard.empty):
 					return True
 		return False
 
-	def board_walk(b,r,c,d):
-		if b[r][c] == b[r+1*d[0]][c+1*d[1]] and b[r][c] == b[r+2*d[0]][c+2*d[1]]:
-			return True
-		return False
+	def evaluate(self):
 
-	for r in range(3):
-		for c in range(3):
-			if b[r][c] != Player.marks[-1]:		# if cell not empty
-				if do_test(b,r,c):
-					if b[r][c] == Player.marks[0]:
-						return 1
-					return -1
-	return 0
+		walk_direction = 	[				# [move_r, move_c]
+								[-1,1],		# diag - up
+								[0,1],		# right
+								[1,1],		# diag - down
+								[1,0]		# down
+							]
+		test_directions = 	[									# test dir. per cell
+								[[1,2,3],	[3],	[3]],		# [r,dd,d],	[d],	[d]
+								[[1],		[],		[]],		# [r],		[],		[]
+								[[0,1],		[],		[]]			# [r,du],	[],		[]
+							]									# walk_direction[d]
+
+		def do_test(self,r,c):
+			if test_directions[r][c]:
+				for d in test_directions[r][c]:
+					if board_walk(self,r,c,walk_direction[d]):
+						return True
+			return False
+
+		def board_walk(self,r,c,d):
+			if (self.status[r][c] == self.status[r+1*d[0]][c+1*d[1]]) and (
+				self.status[r][c] == self.status[r+2*d[0]][c+2*d[1]]):
+				return True
+			return False
+
+		for r in range(3):
+			for c in range(3):
+				if self.status[r][c] != TTTBoard.empty:		# if cell not empty
+					if do_test(self,r,c):
+						if self.status[r][c] == Player.marks[0]:
+							return 1
+						return -1
+		return 0
+
+class Player():
+	marks = ['X','O']
+	minimax_setting = ['max','min']
+
+	def __init__(self,player_index,player_type=None,player_name=None):
+		self.player_type = player_type
+		self.player_name = player_name
+		self.player_index = player_index
+
+	@staticmethod
+	def switch_player(index):
+		return 1 if index == 0 else 0
 
 def minimax(board,player_turn):
 
-	score = evaluate(board)
+	score = board.evaluate()
 	if (score != 0):
 		return score # netko je pobijedio
-	if (not is_moves_left(board)):
+	if (not board.is_moves_left()):
 		return 0 # nema više poteza i nitko nije pobijedio > neriješeno
 
 	if Player.minimax_setting[player_turn] == 'max': # Ako je Maximizer na potezu
@@ -87,10 +98,10 @@ def minimax(board,player_turn):
 
 	for i in range(3):
 		for j in range(3):
-			if board[i][j] == Player.marks[-1]: # ćelija prazna?
-				board[i][j] = Player.marks[player_turn] # napravi potez
+			if board.status[i][j] == TTTBoard.empty: # ćelija prazna?
+				board.status[i][j] = Player.marks[player_turn] # napravi potez
 				best = best_func(best,minimax(board,Player.switch_player(player_turn)))
-				board[i][j] = Player.marks[-1] # vrati potez nakon testa
+				board.status[i][j] = TTTBoard.empty # vrati potez nakon testa
 
 	return best
 
@@ -107,33 +118,15 @@ def find_best_move(board,player_turn):
 	# evaluate minimax function za sve prazne ćelije, vrati optimalnu
 	for i in range(3):
 		for j in range(3):
-			if board[i][j] == Player.marks[-1]: # ćelija prazna?
-				board[i][j] = Player.marks[player_turn] # napravi potez
+			if board.status[i][j] == TTTBoard.empty: # ćelija prazna?
+				board.status[i][j] = Player.marks[player_turn] # napravi potez
 				score = minimax(board,Player.switch_player(player_turn))
-				board[i][j] = Player.marks[-1]	# vrati potez nakon testa
+				board.status[i][j] = TTTBoard.empty	# vrati potez nakon testa
 				if compare(score,best_score):	# ažuriraj ako je potez bolji
 					best_move = (i, j)
 					best_score = score
 
 	return best_move
-
-class Player():
-	marks = ['X','O','-']
-	# player 0 : 'X'
-	# player 1 : 'O'
-	# last(empty) : '-'
-	minimax_setting = ['max','min']
-	# player 0 : MAXIMIZER
-	# player 1 : MINIMIZER
-
-	def __init__(self,player_index,player_type=None,player_name=None):
-		self.player_type = player_type
-		self.player_name = player_name
-		self.player_index = player_index
-
-	@staticmethod
-	def switch_player(index):
-		return index +1 if index < NUM_PLAYERS-1 else 0
 
 def play(players):
 
@@ -151,21 +144,21 @@ def play(players):
 		if (not board_check(row,col)):
 			return (False, "Potez van ploče!")
 
-		if board[row][col]!=Player.marks[-1]:
+		if board[row][col]!=TTTBoard.empty:
 			return (False, "Polje nije prazno!")
 
 		return (True,(row,col))
 
 	def move_display(move,board,player):
 		(row,col) = move
-		board = update(board,row,col,player)
-		display_board(board)
-		score = evaluate(board)
+		board.update(row,col,player)
+		board.display()
+		score = board.evaluate()
 
 		if score != 0:
 			return (True,board,f"pobjeda {player.player_name}!")
 
-		if is_moves_left(board):
+		if board.is_moves_left():
 			return (False,board,"slijedeci potez ...")
 
 		return (True,board,"izjednaceno!")
@@ -173,8 +166,8 @@ def play(players):
 	player_turn = 0
 	move_count = 1
 
-	board = initialize_board()
-	display_board(board)
+	board = TTTBoard()
+	board.display()
 
 	print("\nUPUTA: potez se unosi u obliku (red, [0-2]) (stupac, [0-2]).")
 
@@ -223,7 +216,7 @@ def main():
 	new_game = True
 
 	def initialize_players():
-		players = [Player(x) for x in range(NUM_PLAYERS)]
+		players = [Player(x) for x in range(TTTBoard.num_players)]
 
 		for (index,player) in enumerate(players):
 			player.player_type = assign_value(
