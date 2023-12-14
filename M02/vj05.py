@@ -74,16 +74,36 @@ def konverzije_brojeva():
 	print(type(hbr))
 	print(f"{dbr:x}")
 
-def konverzije_IP(IPadresa,tip):
+def konverzije_IP(IPadresa,padding,tip):
 	sum=""
 	for i in IPadresa.split("."):
-		sum+=f"{int(i):{tip}}"+"."
-	print(f"[{sum[:-1].upper()}]")
+		sum+=f"{int(i):0>{padding}{tip}}"+"."
+	return f"[{sum[:-1].upper()}]"
 
 def test_IP():
-	IP = "192.168.0.1"
-	print(IP)
-	konverzije_IP(IP,'x')
-	konverzije_IP(IP,'b')
+	IP = "192.168.0.1"	# za testiranje
+
+	print(f"dec: [{IP}]")
+	print(f"hex: {konverzije_IP(IP,2,'x')}")
+	print(f"bin: {konverzije_IP(IP,8,'b')}")
+
+# ulaz je int broj (type je int) od 0 do 15 - 15 -> 1111 0 -> 0000
+# pretvaramo u binarni ALI type ostaje int !!!
+# MI cemo napisati program koji ce napraviti tu konverziju
+
+def konverzije_baza(broj,baza):
+	digits = []
+	while broj > 0:
+		digits.append(broj%baza)
+		broj = broj//baza
+	digits.reverse()
+	return digits
+
+def test_baze():
+	broj = 8
+	baza = 2
+	print(broj)
+	print(konverzije_baza(broj,baza))
 
 test_IP()
+# test_baze()
