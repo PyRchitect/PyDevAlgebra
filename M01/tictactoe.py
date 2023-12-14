@@ -144,7 +144,7 @@ def play(players):
 		if (not board_check(row,col)):
 			return (False, "Potez van ploče!")
 
-		if board[row][col]!=TTTBoard.empty:
+		if board.status[row][col]!=TTTBoard.empty:
 			return (False, "Polje nije prazno!")
 
 		return (True,(row,col))
