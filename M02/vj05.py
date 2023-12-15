@@ -74,8 +74,8 @@ def konverzije_brojeva():
 	print(type(hbr))
 	print(f"{dbr:x}")
 
-def konverzije_IP(IPadresa,padding,tip):
-	return ".".join([f"{int(i):0>{padding}{tip}}" for i in IPadresa.split(".")])
+def konverzije_IP(IPadresa,width,tip):
+	return ".".join([f"{int(i):0>{width}{tip}}" for i in IPadresa.split(".")])
 
 def konverzije_IP_backup(IPadresa,padding,tip):
 	sum=""
@@ -97,9 +97,8 @@ def test_IP():
 def konverzije_baza(broj,baza):
 	digits = []
 	while broj > 0:
-		digits.append(broj%baza)
+		digits.insert(0,broj%baza)
 		broj = broj//baza
-	digits.reverse()
 	return digits
 
 def test_baze():
@@ -107,7 +106,13 @@ def test_baze():
 	baza = 2 # za testiranje
 	print("\n> konverzija baza - test:")
 	print(f"dec: {broj}")
-	print(f"baza {baza}: {konverzije_baza(broj,baza)}")
+	result = konverzije_baza(broj,baza)
+	print(f"baza {baza}: {result}")
 
-test_IP()
+	result_str = '0b'+''.join([str(i) for i in result])
+	print("\n> konvertiraj natrag - test:")
+	print(f"result (baza 2): {result_str}")
+	print(f"result (baza 10): {int(result_str,2)}")
+
+# test_IP()
 test_baze()
