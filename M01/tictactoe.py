@@ -208,7 +208,7 @@ def assign_value(msg_input,expected_type,check_list,msg_error):
 			print(msg_error)
 			continue
 
-	return parameter
+	return parameter.upper()
 
 def main():
 
