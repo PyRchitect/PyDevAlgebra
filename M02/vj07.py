@@ -1,3 +1,8 @@
+# napisite program koji ce od korisnika zatraziti
+# pocetnu vrijednost
+# krajnju ukljucenu vrijednost
+# korak
+
 def ispisi_brojeve(start,end,step):
 	[print(x,end=' ') for x in range(start,end,step)]
 

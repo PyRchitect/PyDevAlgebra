@@ -1,8 +1,3 @@
-# napisite program koji ce od korisnika zatraziti
-# pocetnu vrijednost
-# krajnju ukljucenu vrijednost
-# korak
-
 import itertools as it
 import numpy as np
 
@@ -23,7 +18,7 @@ def print_ocjene(ocjene):
 
 	print("\n> BROJ OCJENA NUMPY:")
 	print("- "*multiplier)
-	[print(f"({i}) broj ocjena: {x}") for i,x in broj_ocjena_numpy(ocjene)]
+	[print(f"({i+1}) broj ocjena: {x}") for i,x in enumerate(broj_ocjena_numpy(ocjene))]
 	
 	print("\n> PROSJEK OCJENA:")
 	print("- "*multiplier)
@@ -55,7 +50,7 @@ def broj_ocjena_iter(ocjene):
 def broj_ocjena_numpy(ocjene):
 	x,b = np.histogram(ocjene,bins=[1,2,3,4,5])
 	for v,n in it.zip_longest(b,x,fillvalue=0):
-		yield v,n
+		yield n	# može se iskoristiti i v pa ne treba enumerate
 
 def main_ocjene():
 	num = 3
