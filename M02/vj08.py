@@ -53,7 +53,7 @@ def broj_ocjena_numpy(ocjene):
 		yield n	# može se iskoristiti i v pa ne treba enumerate
 
 def main_ocjene():
-	num = 3
+	num = 6
 	chk = [x for x in range(1,6)]
 	ocjene = []
 
