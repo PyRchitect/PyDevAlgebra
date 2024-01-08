@@ -37,15 +37,13 @@ def argtest(input_tests):
 			return onCall
 	return onDecorator
 
-def input_tests(tests):
-	@argtest(tests)
-	def input_sequence(v):	
-		print("Svi testovi uspješni.")
-		# napravi nešto dalje s unosom npr. spremi
-		# za potrebe testiranja samo printa i vraća
-		print(f"TEST PRINT: {v}")
-		return v
-	return input_sequence
+@argtest([test_len(11),test_num,test_norma])
+def input_sequence(v):	
+	print("Svi testovi uspješni.")
+	# napravi nešto dalje s unosom npr. spremi
+	# za potrebe testiranja samo printa i vraća
+	print(f"TEST PRINT: {v}")
+	return v
 	
 def main():
 	naziv = "OIB"
@@ -55,10 +53,9 @@ def main():
 
 	new_input = True
 	while new_input:
-		v = input(f"Unesi {naziv} [{format}]: ")	# primjer: 69435151530
+		v = input(f"Unesi {naziv} [{format}]: ")	# L = 69435151530
 		try:
-			t = [test_len(11),test_num,test_norma]
-			L = input_tests(t)(v)
+			L = input_sequence(v)
 			# sve je prošlo OK, imamo unos u varijabli, dalje po želji
 		except ValueError as VE:
 			print(VE)

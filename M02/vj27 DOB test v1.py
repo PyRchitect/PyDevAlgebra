@@ -1,3 +1,14 @@
+def test_DMY(L):
+	if int(L[:2]) not in range(1,32):
+		raise ValueError("dan nije validan.")
+	if int(L[2:4]) not in range(1,13):
+		raise ValueError("mjesec nije validan.")
+	if int(L[4:]) < 1900:
+		raise ValueError("ma nisi rođen prije 1900.")	
+	if int(L[4:]) > 2006:
+		raise ValueError("samo za starije od 18.")	
+	return True
+
 def test_len(N):
 	def test_len_action(L):
 		if len(L)==N:
@@ -11,17 +22,6 @@ def test_num(L):
 		return True
 	else:
 		raise ValueError("Simboli moraju biti znamenke 0-9")
-
-def test_norma(L):
-	L = [int(x) for x in L]
-	r=[10]
-	for i,l in enumerate(L[:-1]):
-		r.append((((l+r[i])%10 or 10)*2)%11)
-		# print(f"test: {r[-1]}")
-	if (11-r[-1] if r[-1]!=1 else 0) == L[-1]:
-		return True
-	else:
-		raise ValueError("OIB nije validan.")
 
 def argtest(input_tests):
 	def onDecorator(func):
@@ -37,28 +37,25 @@ def argtest(input_tests):
 			return onCall
 	return onDecorator
 
-def input_tests(tests):
-	@argtest(tests)
-	def input_sequence(v):	
-		print("Svi testovi uspješni.")
-		# napravi nešto dalje s unosom npr. spremi
-		# za potrebe testiranja samo printa i vraća
-		print(f"TEST PRINT: {v}")
-		return v
-	return input_sequence
+@argtest([test_len(8),test_num,test_DMY])
+def input_sequence(v):	
+	print("Svi testovi uspješni.")
+	# napravi nešto dalje s unosom npr. spremi
+	# za potrebe testiranja samo printa i vraća
+	print(f"TEST PRINT: {v[:2]} - {v[2:4]} - {v[4:]}")
+	return v
 	
 def main():
-	naziv = "OIB"
-	format = "#"*11
+	naziv = "DoB"
+	format = "DDMMYYYY"
 	print(f"{naziv} EVALUATOR")
 	print('- '*7)
 
 	new_input = True
 	while new_input:
-		v = input(f"Unesi {naziv} [{format}]: ")	# primjer: 69435151530
+		v = input(f"Unesi {naziv} [{format}]: ")	# L = 01012020
 		try:
-			t = [test_len(11),test_num,test_norma]
-			L = input_tests(t)(v)
+			L = input_sequence(v)
 			# sve je prošlo OK, imamo unos u varijabli, dalje po želji
 		except ValueError as VE:
 			print(VE)

@@ -12,16 +12,21 @@ def test_num(L):
 	else:
 		raise ValueError("Simboli moraju biti znamenke 0-9")
 
-def test_norma(L):
-	L = [int(x) for x in L]
-	r=[10]
-	for i,l in enumerate(L[:-1]):
-		r.append((((l+r[i])%10 or 10)*2)%11)
-		# print(f"test: {r[-1]}")
-	if (11-r[-1] if r[-1]!=1 else 0) == L[-1]:
-		return True
-	else:
-		raise ValueError("OIB nije validan.")
+def test_first_digit(N):
+	def test_first_digit_action(L):
+		if int(L[0]) == N:
+			return True
+		else:
+			raise ValueError(f"Prva znamenka mora biti {N}.")
+	return test_first_digit_action
+
+def test_sum_digits(N):
+	def test_sum_digits_action(L):
+		if sum([int(x) for x in L]) == N:
+			return True
+		else:
+			raise ValueError(f"Suma znamenki mora biti {N}.")
+	return test_sum_digits_action
 
 def argtest(input_tests):
 	def onDecorator(func):
@@ -48,16 +53,16 @@ def input_tests(tests):
 	return input_sequence
 	
 def main():
-	naziv = "OIB"
-	format = "#"*11
+	naziv = "synthetic"
+	format = "####"
 	print(f"{naziv} EVALUATOR")
 	print('- '*7)
 
 	new_input = True
 	while new_input:
-		v = input(f"Unesi {naziv} [{format}]: ")	# primjer: 69435151530
+		v = input(f"Unesi {naziv} [{format}]: ")	# L = 1022
 		try:
-			t = [test_len(11),test_num,test_norma]
+			t = [test_len(4),test_num,test_first_digit(1),test_sum_digits(5)]
 			L = input_tests(t)(v)
 			# sve je prošlo OK, imamo unos u varijabli, dalje po želji
 		except ValueError as VE:
