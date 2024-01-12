@@ -38,12 +38,14 @@ def main():
 		while odabir_test == False:
 			try:
 				odabir = int(input("Odabir [0/1/2/3] "))
-				print("- "*7)
 				assert odabir in range(4)
-				odabir_test = True
 			except:
 				print("Pogrešan unos!")
-				odabir_test = False	
+				odabir_test = False
+			else:
+				odabir_test = True
+			finally:
+				print("- "*7)
 
 		if odabir == 0:
 			print("Hvala i doviđenja.")
@@ -55,13 +57,15 @@ def main():
 		while dopunski_test == False:
 			try:
 				d = input("Odabir [Y/N] ")
-				print("- "*7)
 				assert d.upper() in ['Y','N']
-				d = True if d.upper()=='Y' else False
-				dopunski_test = True
 			except:
 				print("Pogrešan unos!")
 				dopunski_test = False
+			else:
+				dopunski_test = True
+				d = True if d.upper()=='Y' else False
+			finally:
+				print("- "*7)
 		
 		if odabir == 1:
 			lotto_play(7,39,dopunski=d)
