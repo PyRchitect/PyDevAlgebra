@@ -9,44 +9,18 @@ class Game():
 
 	def __init__(self):
 
-		self.number_of_players = 0	# set through init_players
 		self.players = self.init_players()
+		self.bank = Player("bank","B")
 
-		self.number_of_decks = self.init_decks()
+		self.number_of_decks, self.shuffle_after = self.init_decks()
 
 		self.move_count = 0
 
-		data = [[self.decks for _ in Cards.ranks] for _ in Cards.suits]
-		self.available_cards = Cards(data)
-
-		# # # TEST
-
-		print("U ŠPILU:")
-		print(Game.display_separator)
-		print("ACES LOW:")
-		print(self.available_cards.status)
-		self.available_cards.aces_lh_switch()
-		print(Game.display_separator)
-		print("ACES HIGH:")
-		print(self.available_cards.status)
-		print(Game.display_separator)
-		print(f"POINTS: {self.available_cards.calculate_points()}")
-
-		for i,p in enumerate(self.players):
-			print(f"\n{i+1}. IGRAC ({p.player_name}, {p.player_type}):")
-			print(Game.display_separator)
-			print("ACES LOW:")
-			print(p.dealt_cards.status)
-			p.dealt_cards.aces_lh_switch()
-			print(Game.display_separator)
-			print("ACES HIGH:")
-			print(p.dealt_cards.status)
-			print(Game.display_separator)
-			print(f"POINTS: {p.dealt_cards.calculate_points()}")
-		
-		# # # TEST
+		# data = [[self.decks for _ in Cards.ranks] for _ in Cards.suits]
+		self.available_cards = Cards(self.number_of_decks)
 			
 	def init_players(self):
+		print("INICIJALIZACIJA IGRAČA")
 		players = []
 		
 		np_test = False
@@ -62,7 +36,7 @@ class Game():
 				print(Game.display_separator)
 		
 		for p in range(np):
-			print(f"\n{p+1}. IGRAČ:")
+			print(f"{p+1}. IGRAČ:")
 
 			pn_test = False
 			while pn_test == False:
@@ -73,8 +47,6 @@ class Game():
 					print("Pogresan unos!")
 				else:
 					pn_test = True
-				finally:
-					print(Game.display_separator)
 			
 			pt_test = False
 			while pt_test == False:
@@ -85,16 +57,15 @@ class Game():
 					print("Pogresan unos!")
 				else:
 					pt_test = True
-				finally:
-					print(Game.display_separator)
+
+				print(Game.display_separator)
 
 			players.append(Player(pn,pt))
-		
-		self.number_of_players = np
 
 		return players
 	
 	def init_decks(self):
+		print("INICIJALIZACIJA DECKOVA")
 
 		d_test = False
 		while d_test == False:
@@ -104,16 +75,82 @@ class Game():
 			except:
 				print("Pogresan unos!")
 			else:
-				self.decks = d
 				d_test = True
-			finally:
-				print(Game.display_separator)
 
-	def deal(self):
-		...
-	
-	def evaluate(self,player):
-		...
+		s_test = False
+		while s_test == False:
+			try:
+				s = int(input("> Shuffle nakon [#]: "))
+				assert s>=1 and s<=d
+			except:
+				print("Pogresan unos!")
+			else:
+				d_test = True
+			
+			print(Game.display_separator)
+
+			return (d,s)
+
+	def deal(self,player):
+
+		# deal 2 cards:
+		player.dealt_cards.add_card(self.available_cards.remove_card())
+		player.dealt_cards.add_card(self.available_cards.remove_card())
+		print(f"> PRVE DVIJE KARTE: {player.dealt_cards.get_cards()}")
+		ps = player.dealt_cards.score
+		score_display = f"{ps[0]}" + (f"{'/'+str(ps[1]) if ps[1] else ''}")
+		print(f"> BROJ BODOVA: {score_display}")
+
+		m_test = False
+		while m_test == False:
+			ps = player.dealt_cards.score
+			if ps[0]==21:
+					print(" > BLACKJACK!")
+					m_test = True
+					continue
+
+			s_test = False
+			while s_test == False:
+				try:
+					move = input("> Stand / Hit? [S,H] ")
+					assert move.upper() in ["S","H"]
+				except:
+					print("Pogrešan unos!")
+					s_test = False
+				else:
+					s_test = True
+				finally:
+					print(Game.display_separator)
+			
+			if move == "H":
+				player.dealt_cards.add_card(self.available_cards.remove_card())
+				print(f"> KARTE: {player.dealt_cards.get_cards()}")
+				ps = player.dealt_cards.score
+				score_display = f"{ps[0]}" + (f"{'/'+str(ps[1]) if ps[1] else ''}")
+				print(f"> BROJ BODOVA: {score_display}",end='')
+			
+				if ps[0]==21 or ps[1]==21:
+					print(" > WIN!")
+					m_test = True
+				elif ps[0]>21:
+					print(" > BUST!")
+					m_test = True
+				else:
+					print(" > UNDER!")
+
+			else:
+				m_test = True
+
+	def evaluate(self):
+		L = []
+		for i,p in enumerate(self.players):
+			ps = p.dealt_cards.score
+			score = ps[1] if ps[1] else ps[0]
+			if score <= 21:
+				L.append((i,score))
+		
+		from operator import itemgetter
+		return sorted(L,key=itemgetter(1),reverse=True)
 
 class Cards():
 	suits = list(range(1,4+1))
@@ -131,7 +168,9 @@ class Cards():
 	rp_ah = list(range(2,11)) + [10]*4
 	# ranks points: aces high > 2-10, J,Q,K,A=10
 
-	def __init__(self,R,aces=0):
+	def __init__(self,decks,input_data=None,aces=0):
+		# if no input data (for set games) init to number of decks in all positions
+		input_data = input_data or [[decks for _ in Cards.ranks] for _ in Cards.suits]
 		# aces flag: 0 - low, 1 - high
 		if aces not in [0,1]:
 			raise ValueError("Aces flag - pogresan unos! [0,1]")
@@ -141,9 +180,14 @@ class Cards():
 			cols=Cards.rd_ah
 		self.aces_lh = aces
 
-		self.status = pd.DataFrame.from_records(data=R,columns=cols,index=Cards.sd)
+		self.status = pd.DataFrame.from_records(data=input_data,columns=cols,index=Cards.sd)
 		pd.set_option('display.max_columns',13)
 		pd.set_option('display.max_rows',4)
+
+		self.score = 0
+	
+	def init_shuffle(self,decks):
+		return [[decks for _ in Cards.ranks] for _ in Cards.suits]
 	
 	def aces_lh_switch(self):
 		col = self.status.pop("A")
@@ -155,45 +199,93 @@ class Cards():
 			self.status.insert(0,col.name,col) # move to beginning
 			self.aces_lh = 0
 	
-	def cards_in_deck(self):
+	def number_of_cards_in_deck(self):
 		return np.sum(self.status.values)
 
 	def calculate_points(self):
 		# aces flag: 0 - low, 1 - high
-		if self.aces_lh == 0:
-			cols=Cards.rp_al
-		elif self.aces_lh == 1:
-			cols=Cards.rp_ah
+		if self.aces_lh == 1:
+			self.aces_lh_switch()
+		cols=Cards.rp_al
 
 		status_points = pd.DataFrame.from_records(data=self.status.values,columns=cols,index=Cards.sd)
 
-		s = 0
+		# first calculate the hard hand:
+		sum_hard = 0
 		for i in range(status_points.shape[1]):
 			c = status_points.iloc[:,i]
-			print(f"cn:{c.name}")
-			print(f"cv:{c.values}")
-			print(f"sum:{sum(c.values)}")
-			s+=c.name*sum(c.values)
+			sum_hard+=c.name*sum(c.values)
 		
-		return s
+		# then, if there are aces, try to calculate soft hands:
+		sum_soft = sum_hard+10 if self.status["A"].sum()>0 and sum_hard+10<=21 else None
+		
+		return (sum_hard,sum_soft)
+
+	def add_card(self,new_card):
+		self.status.loc[new_card[0],new_card[1]] += 1
+		self.score = self.calculate_points()
+
+	def remove_card(self):
+		card_list = []
+		for r in range(self.status.shape[0]):
+			for c in range(self.status.shape[1]):
+				num_cards = self.status.values[r][c]
+				if num_cards > 0:
+					row_name = self.status.index[r]
+					col_name = self.status.columns[c]
+					card_list.append([row_name,col_name])
+		
+		drawn_card = card_list[rn.randint(0,len(card_list)-1)]
+		self.status.loc[drawn_card[0],drawn_card[1]] -= 1
+
+		return drawn_card
+
+	def get_cards(self):
+		card_list = []
+		for r in range(self.status.shape[0]):
+			for c in range(self.status.shape[1]):
+				num_cards = self.status.values[r][c]
+				if num_cards > 0:
+					row_name = self.status.index[r]
+					col_name = self.status.columns[c]
+					card_list.extend([[row_name,col_name]*num_cards])
+		
+		return card_list
 
 class Player():
 	def __init__(self,player_name,player_type):
-		self.player_name = player_name
-		self.player_type = player_type
+		self.name = player_name
+		self.type = player_type
 
-		data = [[0 for _ in Cards.ranks] for _ in Cards.suits]
-		self.dealt_cards = Cards(data)
+		self.dealt_cards = Cards(decks=0)	# player has no decks
 
 def play(new_game):
-	...
+
+	print("\nIGRA")
+	
+	for i,p in enumerate(new_game.players):
+		print(f"\n{i+1}. IGRAC:")
+		new_game.deal(p)
+	
+	print("\nREZULTATI")
+	print(Game.display_separator)
+	ranking = new_game.evaluate()
+	best = ranking[0][1]
+	print(f"RANG LISTA: {ranking}")
+	print(f"POBJEDNICI [SCORE = {best}]:",end=' ')
+	i = 0
+	while ranking[i][1]==best:
+		print(new_game.players[ranking[i][0]].name, sep=', ',end=' ')
+		i += 1
+		if i==len(ranking):
+			break
+	print()
 
 def main():
 	print("BLACKJACK")
-	
-	new_game = Game()
 
 	while True:
+		print("\nGLAVNI MENU")
 		print(Game.display_separator)
 		print("[0] - izlaz")
 		print("[1] - igra")
@@ -201,8 +293,8 @@ def main():
 		c_test = False
 		while c_test == False:
 			try:
-				odabir = int(input("Odabir [0,1] "))
-				assert odabir in [0,1]
+				c = int(input("Odabir [0,1] "))
+				assert c in [0,1]
 			except:
 				print("Pogrešan unos!")
 				c_test = False
@@ -211,11 +303,15 @@ def main():
 			finally:
 				print(Game.display_separator)
 
-		if odabir == 0:
+		if c == 0:
 			print("Hvala i doviđenja.")
 			break
 
-		if odabir == 1:
+		if c == 1:	
+			print("INICIJALIZACIJA")
+			print(Game.display_separator)
+			new_game = Game()
+
 			play(new_game)
 
 		# elif odabir == ...
