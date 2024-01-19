@@ -2,14 +2,6 @@ import os
 import random as rn
 import itertools as it
 
-display_separator = '- '*20
-
-width_min = 5
-width_max = 30
-
-height_min = 5
-height_max = 30
-
 class MBoard():
 	hidden = 'X'
 	empty = ' '
@@ -17,22 +9,11 @@ class MBoard():
 	bomb = 'B'
 	mark = 'M'
 
-	palette = {
-		0: '\x1b[38;5;245m',
-		1: '\x1b[1;34;40m',
-		2: '\x1b[1;32;40m',
-		3: '\x1b[1;31;40m',
-		4: '\x1b[1;33;40m',
-		5: '\x1b[1;35;40m',
-		6: '\x1b[1;37;40m',
-		7: '\x1b[1;36;40m',
-		8: '\x1b[1;30;40m',
-		bomb: '\x1b[0;37;41m',
-		mark: '\x1b[38;5;52m',
-		empty: '\x1b[38;5;245m',
-		hidden: '\x1b[38;5;245m'
-	}
-	ENDC = '\x1b[0m'
+	config = {
+		'w_min':5,
+		'w_max':30,
+		'h_min':5,
+		'h_max':30}
 
 	# [width,height,bombs] ; custom appends with key 'c'
 	difficulty = {
@@ -63,8 +44,8 @@ class MBoard():
 			board_display+=f'\n| {r:02d}| '
 			for c in range(self.width):
 				value = board[r][c]
-				color = MBoard.palette[value]
-				board_display+=color + f'{value}' + MBoard.ENDC +' | '
+				color = Interface.palette[value]
+				board_display+=color + f'{value}' + Interface.palette["ENDC"] +' | '
 
 		print(board_display[1:])
 	
@@ -122,7 +103,7 @@ class MBoard():
 							]
 
 		test_direction = 	[										# test dir. per cell
-								[[1,3],		[1,2,3],	[2,3]],		# [r,d],	[r,d,l],	[d,l]
+								[[1,2],		[1,2,3],	[2,3]],		# [r,d],	[r,d,l],	[d,l]
 								[[0,1,2],	[0,1,2,3],	[0,2,3]],	# [u,r,d],	[all],		[u,d,l]
 								[[0,1],		[0,1,3],	[0,3]]		# [u,r],	[u,r,l],	[u,l]
 							]										# walk_direction[d]
@@ -199,8 +180,34 @@ class MBoard():
 			self.active[r][c] = MBoard.empty
 			# check perimeter around empty cells
 			for p in self.perimeter(r,c,type=8):
+				# vektori kretanja mogu biti i negativnog smjera,
+				# znači npr. 0 + (-1) = -1, a L[-1] je zapravo
+				# zadnji element liste pa bi algoritam nastavio
+				# flood fill na drugu stranu polja > OVERFLOW!
+				# trebalo bi provjeriti r i c ostaju unutar ploče
+				# > OVO JE SPRIJEČENO ODABIROM TOČNOG PERIMETRA
 				if self.active[r+p[0]][c+p[1]] == MBoard.hidden:
 					self.flood_fill(r+p[0],c+p[1])
+
+class Interface(MBoard):
+	config = {
+		"d_sep" : '- '*20}
+
+	palette = {
+		0: '\x1b[38;5;245m',
+		1: '\x1b[1;34;40m',
+		2: '\x1b[1;32;40m',
+		3: '\x1b[1;31;40m',
+		4: '\x1b[1;33;40m',
+		5: '\x1b[1;35;40m',
+		6: '\x1b[1;37;40m',
+		7: '\x1b[1;36;40m',
+		8: '\x1b[1;30;40m',
+		MBoard.bomb: '\x1b[0;37;41m',
+		MBoard.mark: '\x1b[38;5;52m',
+		MBoard.empty: '\x1b[38;5;245m',
+		MBoard.hidden: '\x1b[38;5;245m',
+		"ENDC": '\x1b[0m'}
 
 def play(difficulty):
 	mb = MBoard(difficulty)
@@ -216,7 +223,7 @@ def play(difficulty):
 		print(f"> PREOSTALO BOMBI: {mb.get_bombs_remaining()}")
 
 		print("\nMINESWEEPER")
-		print(display_separator)
+		print(Interface.config['d_sep'])
 		print("> UPUTA: r = ## red, c = ## stupac, t = tip poteza")
 		print("> UPUTA: tip poteza: 0 = iskopaj, 1 = (od)markiraj")
 		print("> UPUTA: za izlaz iz igre umjesto poteza unesi [x]")
@@ -246,7 +253,7 @@ def play(difficulty):
 			else:
 				i_test = True
 			finally:
-				print(display_separator)
+				print(Interface.config['d_sep'])
 
 		if new_move == True:
 			result = mb.evaluate_move(r,c,t)
@@ -266,13 +273,13 @@ def main():
 	new_game = True
 	while new_game:
 		print("\nGLAVNI MENU")
-		print(display_separator)
+		print(Interface.config['d_sep'])
 		print("[0] - izlaz")
 		print("[1] - beginner\t(09x09, B = 10)")
 		print("[2] - medium\t(16x16, B = 40)")
 		print("[3] - expert\t(30x60, B = 99)")
-		c_dims = f"[{width_min}-{width_max}]x[{height_min}-{height_max}]"
-		c_bombs = f"[{width_min*width_min}-{width_max*width_max}]"
+		c_dims = f"[{MBoard.config['w_min']}-{MBoard.config['w_max']}]x[{MBoard.config['h_min']}-{MBoard.config['h_max']}]"
+		c_bombs = f"[{MBoard.config['w_min']*MBoard.config['h_min']}-{MBoard.config['w_max']*MBoard.config['h_max']}]"
 		print(f"[4] - custom\t({c_dims}, B = {c_bombs})")
 
 		n_test = False
@@ -286,7 +293,7 @@ def main():
 			else:
 				n_test = True
 			finally:
-				print(display_separator)
+				print(Interface.config['d_sep'])
 
 		if new_game == 0:
 			print("Hvala i doviđenja.")
@@ -301,13 +308,13 @@ def main():
 			c_test = False
 			while c_test == False:
 				try:
-					width = int(input(f"Sirina [{width_min}-{width_max}] "))
-					assert width >= width_min and width <= width_max
+					width = int(input(f"Sirina [{MBoard.config['w_min']}-{MBoard.config['w_max']}] "))
+					assert width >= MBoard.config['w_min'] and width <= MBoard.config['w_max']
 
-					height = int(input(f"Visina [{height_min}-{height_max}] "))
-					assert height >= height_min and height <= height_max
+					height = int(input(f"Visina [{MBoard.config['h_min']}-{MBoard.config['h_max']}] "))
+					assert height >= MBoard.config['h_min'] and height <= MBoard.config['h_max']
 					
-					bombs = int(input(f"Bombe [1-{width*height-1}] "))					
+					bombs = int(input(f"Bombe [1-{width*height-1}] "))
 					assert bombs >= 1 and bombs <= width*height-1
 				except:
 					print("Pogrešan unos!")
@@ -315,7 +322,7 @@ def main():
 				else:
 					c_test = True
 				finally:
-					print(display_separator)
+					print(Interface.config['d_sep'])
 			
 			MBoard.difficulty['c']=(width,height,bombs)
 		
