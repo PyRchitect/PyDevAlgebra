@@ -3,11 +3,12 @@ import random as rn
 import itertools as it
 
 class MBoard():
-	hidden = 'X'
-	empty = ' '
-	zero = 0
-	bomb = 'B'
-	mark = 'M'
+	values ={
+		"hidden": 'X',
+		"empty": ' ',
+		"zero": 0,
+		"bomb": 'B',
+		"mark": 'M'}
 
 	config = {
 		'w_min':5,
@@ -23,55 +24,54 @@ class MBoard():
 
 	def __init__(self,d_key):
 		(self.width,self.height,bombs) = MBoard.difficulty[d_key]
-		self.bombs_pos_all = []	# fill through board creation
 
+		self.bombs_pos_all = []
 		self.bombs_pos_found = []
+
 		self.marks_pos_all = []
 
-		self.active = self.init_board(MBoard.hidden)
+		self.active = self.init_board(MBoard.values['hidden'])
 		self.board = self.create_board(bombs)
-		self.test = 't'
 
 	def display(self,board):
-		board_display = ''
-
-		board_display+='\n|   |'
-		# naslovi stupaca
+		board_display='|   |'
+		# column titles
 		for i in range(self.width):
 			board_display+=f" {i:02d}|"
 
 		for r in range(self.height):
+			# row titles
 			board_display+=f'\n| {r:02d}| '
 			for c in range(self.width):
 				value = board[r][c]
 				color = Interface.palette[value]
 				board_display+=color + f'{value}' + Interface.palette["ENDC"] +' | '
 
-		print(board_display[1:])
+		print(board_display)
 	
 	def init_board(self,symbol):
 		return [[symbol for _ in range(self.width)] for _ in range(self.height)]
 
 	def create_board(self,bombs):
-		# create board with zeroes
-		board = self.init_board(MBoard.zero)
+		# initialize board with zeroes
+		board = self.init_board(MBoard.values['zero'])
 	
-		# populate board with bombs
+		# populate board with bombs on random positions
 		distribution = [*it.product(range(self.height),range(self.width))]		
 		self.bombs_pos_all = rn.sample(distribution,k=bombs)
-		for b in self.bombs_pos_all:
-			board[b[0]][b[1]] = MBoard.bomb
+		for (r,c) in self.bombs_pos_all:
+			board[r][c] = MBoard.values['bomb']
 
 		# create perimeter around bombs
-		for b in self.bombs_pos_all:
-			for p in self.perimeter(*b,type=8):
-				if board[b[0]+p[0]][b[1]+p[1]] != MBoard.bomb:
-					board[b[0]+p[0]][b[1]+p[1]] += 1
+		for (r,c) in self.bombs_pos_all:
+			for (rp,cp) in self.perimeter(r,c,type=8):
+				if board[r+rp][c+cp] != MBoard.values['bomb']:
+					board[r+rp][c+cp] += 1
 
 		return board
 
-	def perimeter(self,pr,pc,type=8):
-		# reduce coordinates to cases:		
+	def perimeter(self,r,c,type=8):
+		# reduce coordinates to cases (corner,side,inside):		
 		def get_position(coordinate,dimension):
 			if coordinate == 0:
 				return 0
@@ -81,8 +81,8 @@ class MBoard():
 				return 2
 			
 		# point = [row,col]
-		r = get_position(pr,self.height)
-		c = get_position(pc,self.width)
+		r = get_position(r,self.height)
+		c = get_position(c,self.width)
 
 		# type = 4 (only directions), 8 (with diagonals)
 		if type not in [4,8]:
@@ -131,33 +131,36 @@ class MBoard():
 		v = self.board[r][c]
 		a = self.active[r][c]
 
-		if t == 0 and a == MBoard.hidden:	# if dig
-			if v == MBoard.bomb:
+		if t == 0 and a == MBoard.values['hidden']:			# if dig (left click)
+			if v == MBoard.values['bomb']:					# dig bomb
 				self.active[r][c] = v
 				return 'lost'
-			if v > 0:
+			elif v > 0:										# dig num
 				self.active[r][c] = v
 				return 'dig'
-			else:
+			elif v == 0:									# dig empty
 				self.flood_fill(r,c)
 				return 'flood'
 
-		elif t == 1 and a == MBoard.hidden:	# if mark
-			self.active[r][c] = MBoard.mark
-			if v == MBoard.bomb:
-				self.bombs_pos_found.append([r,c])
-				if self.get_bombs_remaining() == 0:
-					return 'win'
-				else:
-					return 'bomb'
-			else:
-				return 'mark'
-		
-		elif t == 1 and a == MBoard.mark:
-			self.active[r][c] = MBoard.hidden
-			if v == MBoard.bomb:
-				self.bombs_pos_found.remove([r,c])
-			return 'unmark'
+		elif t == 1:										# if mark (right click)
+			if a == MBoard.values['hidden']:				# mark hidden
+				self.active[r][c] = MBoard.values['mark']	# set mark
+				if v == MBoard.values['bomb']:				# mark bomb
+					self.bombs_pos_found.append([r,c])
+					if self.get_bombs_remaining() == 0:
+						return 'win'
+					else:
+						return 'bomb'
+				else:										# mark not bomb
+					return 'mark'
+			
+			elif a == MBoard.values['mark']:				# mark marked
+				self.active[r][c] = MBoard.values['hidden']	# clear mark
+				if v == MBoard.values['bomb']:				# unmark bomb
+					self.bombs_pos_found.remove([r,c])
+					return 'unmark'
+				else:										# unmark not bomb
+					return 'clear'
 	
 	def flood_fill(self,r,c):
 		# # # # TEST
@@ -172,22 +175,22 @@ class MBoard():
 		v = self.board[r][c]
 		# a = self.active[r][c]
 
-		if v == MBoard.bomb:	# bomb: do nothing
-			return
-		elif v>0:				# on boundary: reveal
-			self.active[r][c] = v
-		else:					# empty: dig, recurse
-			self.active[r][c] = MBoard.empty
+		if v == MBoard.values['bomb']:					# bomb: do nothing
+			return										# do not reveal
+		elif v > 0:										# on boundary: reveal
+			self.active[r][c] = v						# reveal num
+		elif v == 0:									# empty: dig, recurse
+			self.active[r][c] = MBoard.values['empty']	# reveal empty
 			# check perimeter around empty cells
-			for p in self.perimeter(r,c,type=8):
+			for (rp,cp) in self.perimeter(r,c,type=8):
 				# vektori kretanja mogu biti i negativnog smjera,
 				# znači npr. 0 + (-1) = -1, a L[-1] je zapravo
 				# zadnji element liste pa bi algoritam nastavio
 				# flood fill na drugu stranu polja > OVERFLOW!
 				# trebalo bi provjeriti r i c ostaju unutar ploče
 				# > OVO JE SPRIJEČENO ODABIROM TOČNOG PERIMETRA
-				if self.active[r+p[0]][c+p[1]] == MBoard.hidden:
-					self.flood_fill(r+p[0],c+p[1])
+				if self.active[r+rp][c+cp] == MBoard.values['hidden']:
+					self.flood_fill(r+rp,c+cp)
 
 class Interface(MBoard):
 	config = {
@@ -203,10 +206,10 @@ class Interface(MBoard):
 		6: '\x1b[1;37;40m',
 		7: '\x1b[1;36;40m',
 		8: '\x1b[1;30;40m',
-		MBoard.bomb: '\x1b[0;37;41m',
-		MBoard.mark: '\x1b[38;5;52m',
-		MBoard.empty: '\x1b[38;5;245m',
-		MBoard.hidden: '\x1b[38;5;245m',
+		MBoard.values['bomb']: '\x1b[0;37;41m',
+		MBoard.values['mark']: '\x1b[38;5;52m',
+		MBoard.values['empty']: '\x1b[38;5;245m',
+		MBoard.values['hidden']: '\x1b[38;5;245m',
 		"ENDC": '\x1b[0m'}
 
 def play(difficulty):
