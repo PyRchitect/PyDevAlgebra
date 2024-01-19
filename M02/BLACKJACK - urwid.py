@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import random as rn
 import urwid as uw
+import os
 
 class Game():
 	max_players = 8
@@ -327,4 +328,27 @@ def main():
 
 		# elif odabir == ...
 
-main()
+def simple_menu(title, choices):
+
+	def menu(title,choices):
+		body = [uw.Text(title),uw.Divider()]
+		for c in choices:
+			button = uw.Button(c)
+			uw.connect_signal(button,'click',item_chosen,c)
+			body.append(uw.AttrMap(button,None,focus_map='reversed'))
+		return uw.ListBox(uw.SimpleFocusListWalker(body))
+	
+	def item_chosen(button,choice):
+		...
+
+
+	main = uw.Padding(menu(title,choices),left=2,right=2)
+	top = uw.Overlay(main,uw.SolidFill('\N{MEDIUM SHADE}'),
+				  align='center',width=('relative',60),
+				  valign='middle',height=('relative',60),
+				  min_width=20,min_height=9)
+	uw.MainLoop(top).run()
+
+simple_menu("GLAVNI MENU",["[0] - izlaz","[1] - igra"])
+
+# main()
