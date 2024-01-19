@@ -2,7 +2,7 @@ import os
 import random as rn
 import itertools as it
 
-display_separator = '- '*10
+display_separator = '- '*20
 
 width_min = 5
 width_max = 30
@@ -11,7 +11,7 @@ height_min = 5
 height_max = 30
 
 class MBoard():
-	hidden = '-'
+	hidden = 'X'
 	empty = ' '
 	zero = 0
 	bomb = 'B'
@@ -174,17 +174,19 @@ class MBoard():
 		
 		elif t == 1 and a == MBoard.mark:
 			self.active[r][c] = MBoard.hidden
+			if v == MBoard.bomb:
+				self.bombs_pos_found.remove([r,c])
 			return 'unmark'
 	
 	def flood_fill(self,r,c):
-		# # # TEST
-		os.system('cls')
-		print()
-		self.display(self.board)
-		print()
-		self.display(self.active)
-		print()
-		# # # TEST
+		# # # # TEST
+		# os.system('cls')
+		# print()
+		# self.display(self.board)
+		# print()
+		# self.display(self.active)
+		# print()
+		# # # # TEST
 	
 		v = self.board[r][c]
 		# a = self.active[r][c]
@@ -215,8 +217,9 @@ def play(difficulty):
 
 		print("\nMINESWEEPER")
 		print(display_separator)
-		print("> UPUTA: tip poteza [0]: iskopaj, [1]: (od)markiraj")
-		print("> UPUTA: za izlaz iz igre unesi [x]")
+		print("> UPUTA: r = ## red, c = ## stupac, t = tip poteza")
+		print("> UPUTA: tip poteza: 0 = iskopaj, 1 = (od)markiraj")
+		print("> UPUTA: za izlaz iz igre umjesto poteza unesi [x]")
 
 	new_move = True
 	while new_move == True:
@@ -225,7 +228,7 @@ def play(difficulty):
 		i_test=False
 		while i_test == False:
 			try:
-				move = input("\n> unesi koordinate i tip poteza: [r c 0|1]:")
+				move = input("\n> unesi koordinate i tip poteza: [r c t] ili [x]: ")
 				if move.upper() =='X':
 					new_move = False
 					break

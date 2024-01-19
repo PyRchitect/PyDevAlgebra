@@ -47,5 +47,5 @@ def print_8bit_table():
 # print("\nThe 256 colors scheme is:")
 # print(' '.join([colors_256(x) for x in range(256)]))
 
-# print_3bit_table()
-print_8bit_table()
+print_3bit_table()
+# print_8bit_table()
