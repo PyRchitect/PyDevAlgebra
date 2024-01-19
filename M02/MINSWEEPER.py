@@ -11,7 +11,8 @@ height_min = 5
 height_max = 30
 
 class MBoard():
-	empty = '-'
+	hidden = '-'
+	empty = ' '
 	zero = 0
 	bomb = 'B'
 	mark = 'M'
@@ -28,7 +29,8 @@ class MBoard():
 		8: '\x1b[1;30;40m',
 		bomb: '\x1b[0;37;41m',
 		mark: '\x1b[38;5;52m',
-		empty: '\x1b[38;5;245m'
+		empty: '\x1b[38;5;245m',
+		hidden: '\x1b[38;5;245m'
 	}
 	ENDC = '\x1b[0m'
 
@@ -45,7 +47,7 @@ class MBoard():
 		self.bombs_pos_found = []
 		self.marks_pos_all = []
 
-		self.active = self.init_board(MBoard.empty)
+		self.active = self.init_board(MBoard.hidden)
 		self.board = self.create_board(bombs)
 		self.test = 't'
 
@@ -81,14 +83,26 @@ class MBoard():
 
 		# create perimeter around bombs
 		for b in self.bombs_pos_all:
-			for p in self.perimeter(b,type=8):
+			for p in self.perimeter(*b,type=8):
 				if board[b[0]+p[0]][b[1]+p[1]] != MBoard.bomb:
 					board[b[0]+p[0]][b[1]+p[1]] += 1
 
-		return board	
+		return board
 
-	def perimeter(self,point,type=8):
+	def perimeter(self,pr,pc,type=8):
+		# reduce coordinates to cases:		
+		def get_position(coordinate,dimension):
+			if coordinate == 0:
+				return 0
+			elif coordinate < dimension-1:
+				return 1
+			else:
+				return 2
+			
 		# point = [row,col]
+		r = get_position(pr,self.height)
+		c = get_position(pc,self.width)
+
 		# type = 4 (only directions), 8 (with diagonals)
 		if type not in [4,8]:
 			raise ValueError("Incorrect type!")
@@ -119,22 +133,11 @@ class MBoard():
 								[[0],		[0,3],		[3]]		# [ur],		[ur,ul],	[ul]
 							]										# walk_direction[d]
 
-		# reduce coordinates to cases:		
-		def get_position(coordinate,dimension):
-			if coordinate == 0:
-				return 0
-			elif coordinate < dimension-1:
-				return 1
-			else:
-				return 2
-		
-		p = [get_position(point[0],self.height),get_position(point[1],self.width)]
-
 		available = []
-		for d in test_direction[p[0]][p[1]]:
+		for d in test_direction[r][c]:
 			available.append(walk_direction[d])
 		if type == 8:
-			for d in test_diagonals[p[0]][p[1]]:
+			for d in test_diagonals[r][c]:
 				available.append(walk_diagonals[d])
 		
 		return available
@@ -147,17 +150,18 @@ class MBoard():
 		v = self.board[r][c]
 		a = self.active[r][c]
 
-		if t == 0 and a == MBoard.empty:		# if dig
-			self.active[r][c] = v
+		if t == 0 and a == MBoard.hidden:	# if dig
 			if v == MBoard.bomb:
+				self.active[r][c] = v
 				return 'lost'
 			if v > 0:
+				self.active[r][c] = v
 				return 'dig'
 			else:
-				# self.flood_fill([r,c])
+				self.flood_fill(r,c)
 				return 'flood'
 
-		elif t == 1 and a == MBoard.empty:	# if mark
+		elif t == 1 and a == MBoard.hidden:	# if mark
 			self.active[r][c] = MBoard.mark
 			if v == MBoard.bomb:
 				self.bombs_pos_found.append([r,c])
@@ -169,12 +173,32 @@ class MBoard():
 				return 'mark'
 		
 		elif t == 1 and a == MBoard.mark:
-			self.active[r][c] = MBoard.empty
+			self.active[r][c] = MBoard.hidden
 			return 'unmark'
 	
-	def flood_fill(self,point):
-		...
-		
+	def flood_fill(self,r,c):
+		# # # TEST
+		os.system('cls')
+		print()
+		self.display(self.board)
+		print()
+		self.display(self.active)
+		print()
+		# # # TEST
+	
+		v = self.board[r][c]
+		# a = self.active[r][c]
+
+		if v == MBoard.bomb:	# bomb: do nothing
+			return
+		elif v>0:				# on boundary: reveal
+			self.active[r][c] = v
+		else:					# empty: dig, recurse
+			self.active[r][c] = MBoard.empty
+			# check perimeter around empty cells
+			for p in self.perimeter(r,c,type=8):
+				if self.active[r+p[0]][c+p[1]] == MBoard.hidden:
+					self.flood_fill(r+p[0],c+p[1])
 
 def play(difficulty):
 	mb = MBoard(difficulty)
@@ -189,7 +213,7 @@ def play(difficulty):
 		mb.display(mb.active)
 		print(f"> PREOSTALO BOMBI: {mb.get_bombs_remaining()}")
 
-		print("MINESWEEPER")
+		print("\nMINESWEEPER")
 		print(display_separator)
 		print("> UPUTA: tip poteza [0]: iskopaj, [1]: (od)markiraj")
 		print("> UPUTA: za izlaz iz igre unesi [x]")
@@ -230,7 +254,7 @@ def play(difficulty):
 				new_move = False
 			elif result == 'win':
 				show_board()
-				print("\nYOU WON!")
+				print("\nPOBJEDA!")
 				new_move = False
 
 def main():
@@ -241,15 +265,17 @@ def main():
 		print("\nGLAVNI MENU")
 		print(display_separator)
 		print("[0] - izlaz")
-		print("[1] - easy (9x9,B=10)")
-		print("[2] - intermediate (16x16,B=40)")
-		print("[3] - expert (30x60,B=99)")
-		print("[4] - custom (#x#)")
+		print("[1] - beginner\t(09x09, B = 10)")
+		print("[2] - medium\t(16x16, B = 40)")
+		print("[3] - expert\t(30x60, B = 99)")
+		c_dims = f"[{width_min}-{width_max}]x[{height_min}-{height_max}]"
+		c_bombs = f"[{width_min*width_min}-{width_max*width_max}]"
+		print(f"[4] - custom\t({c_dims}, B = {c_bombs})")
 
 		n_test = False
 		while n_test == False:
 			try:
-				new_game = int(input("Odabir [0,1,2,3,4] "))
+				new_game = int(input("\n> Odabir [0,1,2,3,4] "))
 				assert new_game in [0,1,2,3,4]
 			except:
 				print("Pogrešan unos!")
