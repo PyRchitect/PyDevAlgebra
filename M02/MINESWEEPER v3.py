@@ -1,6 +1,7 @@
 import os
 import random as rn
 import itertools as it
+import TreeNode as tn
 
 class Board():
 	config = {
@@ -168,7 +169,7 @@ class Interface():
 		"m_sep": 20}
 
 	separator = config['d_sep'] * config['m_sep']
-	
+
 	class SimpleMessage():
 		def __init__(self,
 			   text='',
@@ -278,7 +279,7 @@ class Interface():
 				choices.append(g.get_input())
 			return choices
 			
-	class Menu():
+	class SimpleMenu():
 		def __init__(self,
 			   title='',
 			   options='',
@@ -299,7 +300,7 @@ class Interface():
 				choice_test,
 				choice_error)
 		
-		def show(self):
+		def show_text(self):
 			Interface.SimpleMessage('\n'+self.title).show()
 			Interface.SimpleMessage(Interface.separator).show()
 
@@ -307,14 +308,29 @@ class Interface():
 				Interface.SimpleMessage(option).show()
 
 			Interface.SimpleMessage(Interface.separator).show()
-
+		
+		def show_input(self):
 			return Interface.SimpleGetter.get_input(self.getter)
+		
+		def show(self):
+			self.show_text()
+			return self.show_input()
+
+	class CascadingMenu(tn.TreeNode):
+		def __init__(self,data=None,callback=lambda x: x):
+			self.callback=callback
+			tn.TreeNode.__init__(self,data)
+		
+		def printTree(self,traversal_method):
+			for current in traversal_method():
+				print(f"{' '*tn.TreeNode.print_indent * current.node_level() } -> {current.data}")
+	
 
 class Menus():
 	class MainMenu():
 		def __init__(self):
 			mc = Board.config
-			self.menu = Interface.Menu()
+			self.menu = Interface.SimpleMenu()
 			self.menu.title = "GLAVNI MENU"
 
 			opt = []
@@ -397,14 +413,23 @@ class Menus():
 
 	class ConfigMenu():
 		def __init__(self):
-			self.menu = Interface.Menu()
-			self.menu.title = "SETTINGS"
+			self.menu = Interface.CascadingMenu(*self.ConfigRoot())
+			self.menu.addChild(Interface.CascadingMenu(*self.ConfigInput()))
+			self.menu.addChild(Interface.CascadingMenu(*self.ConfigDisplay()))
+
+		@staticmethod
+		def ConfigRoot():
+			# no callback function (is not leaf, only navigation)
+			callback = None
+			
+			menu = Interface.SimpleMenu()
+			menu.title = "SETTINGS"
 
 			opt = []
 			opt.append('[0] - izlaz')
 			opt.append('[1] - input settings')
 			opt.append('[2] - display settings')
-			self.menu.options = opt
+			menu.options = opt
 
 			c = Interface.SimpleGetter()
 			c.choice_label = 'Odabir [0|...|2]: '
@@ -412,15 +437,41 @@ class Menus():
 			c.choice_type = (int,)
 			c.choice_test = (lambda x: x in [0,1,2],)
 			c.choice_error = 'Pogresan unos!'
-			self.menu.getter = c
-		
-		def show(self):
-			return self.menu.show()
+			menu.getter = c
 
-	class ConfigDisplay():
-		def __init__(self):
-			self.menu = Interface.Menu()
-			self.menu.title = "SETTINGS > DISPLAY SETTINGS"
+			return (menu,callback)
+		
+		@staticmethod
+		def ConfigInput():
+			def callback():
+				...
+			
+			menu = Interface.SimpleMenu()
+			menu.title = "SETTINGS > INPUT SETTINGS"
+
+			opt = []
+			opt.append('[0] - izlaz')
+			opt.append('[1] - keyboard')
+			opt.append('[2] - mouse')
+			menu.options = opt
+
+			c = Interface.SimpleGetter()
+			c.choice_label = 'Odabir [0|1|2]: '
+			c.choice_sep = ' '
+			c.choice_type = (int,)
+			c.choice_test = (lambda x: x in [0,1],)
+			c.choice_error = 'Pogresan unos!'
+			menu.getter = c
+
+			return (menu,callback)
+		
+		@staticmethod
+		def ConfigDisplay():
+			def callback():
+				...
+			
+			menu = Interface.SimpleMenu()
+			menu.title = "SETTINGS > DISPLAY SETTINGS"
 
 			opt = []
 			opt.append('[0] - izlaz')
@@ -429,7 +480,7 @@ class Menus():
 			opt.append('[3] - vertical separate')
 			opt.append('[4] - vertical spacing')
 			opt.append('> UPUTA X: [0 = NE, 1 = DA]')
-			self.menu.options = opt
+			menu.options = opt
 
 			c = Interface.SimpleGetter()
 			c.choice_label = 'Odabir [0 X|...|4 X]: '
@@ -437,32 +488,9 @@ class Menus():
 			c.choice_type = (int,int,)
 			c.choice_test = (lambda x: x in [0,1,2,3,4],lambda x: x in [0,1],)
 			c.choice_error = 'Pogresan unos!'
-			self.menu.getter = c
-		
-		def show(self):
-			return self.menu.show()
+			menu.getter = c
 
-	class ConfigInput():
-		def __init__(self):
-			self.menu = Interface.Menu()
-			self.menu.title = "SETTINGS > INPUT SETTINGS"
-
-			opt = []
-			opt.append('[0] - izlaz')
-			opt.append('[1] - keyboard')
-			opt.append('[2] - mouse')
-			self.menu.options = opt
-
-			c = Interface.SimpleGetter()
-			c.choice_label = 'Odabir [0|1|2]: '
-			c.choice_sep = ' '
-			c.choice_type = (int,)
-			c.choice_test = (lambda x: x in [0,1],)
-			c.choice_error = 'Pogresan unos!'
-			self.menu.getter = c
-		
-		def show(self):
-			return self.menu.show()
+			return (menu,callback)
 
 class Graphics():
 	config = {
@@ -646,14 +674,19 @@ class Game():
 def configure(ms:'Game'):
 	os.system('cls')
 
-	(choice,) = ms.menus.ConfigMenu().show()
+	test = ms.menus.ConfigMenu()
+	root = test.menu.fetchRoot()
+	root.data.show_text()
+	root.children[0].data.show_text()
+	root.children[1].data.show_text()
 
-	if choice == 0:
-		return
-	elif choice == 1:
-		(choice,) = ms.menus.ConfigInput().show()
-	elif choice == 2:
-		(choice,) = ms.menus.ConfigDisplay().show()
+
+	# if choice == 0:
+	# 	return
+	# elif choice == 1:
+	# 	(choice,) = ms.menus.ConfigInput().show()
+	# elif choice == 2:
+	# 	(choice,) = ms.menus.ConfigDisplay().show()
 
 def play(ms:'Game'):
 	
