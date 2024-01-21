@@ -2,22 +2,19 @@ import os
 import random as rn
 import itertools as it
 
-class MBoard():
-	values ={
-		"hidden": 'X',
-		"empty": ' ',
-		"zero": 0,
-		"bomb": 'B',
-		"mark": 'M',
-		"space": ' ',
-		"sep": '|',
-		"cross": '+'}
-
+class Board():
 	config = {
 		'w_min':5,
 		'w_max':30,
 		'h_min':5,
 		'h_max':30}
+
+	values ={
+		"zero": 0,
+		"hidden": 'X',
+		"empty": ' ',
+		"bomb": 'B',
+		"mark": 'M'}
 
 	# [width,height,bombs] ; custom appends with key 'c'
 	difficulty = {
@@ -26,49 +23,33 @@ class MBoard():
 		'e':(30,16,99)}
 
 	def __init__(self,d_key):
-		(self.width,self.height,bombs) = MBoard.difficulty[d_key]
+		(self.width,self.height,bombs) = Board.difficulty[d_key]
 
 		self.bombs_pos_all = []
 		self.bombs_pos_found = []
 
 		self.marks_pos_all = []
 
-		self.active = self.init_board(MBoard.values['hidden'])
-		self.board = self.create_board(bombs)
-
-	def display(self,board):
-		board_display='|   |'
-		# column titles
-		for i in range(self.width):
-			board_display+=f" {i:02d}|"
-
-		for r in range(self.height):
-			# row titles
-			board_display+=f'\n| {r:02d}| '
-			for c in range(self.width):
-				value = board[r][c]
-				color = Interface.palette[value]
-				board_display+=color + f'{value}' + Interface.palette["ENDC"] +' | '
-
-		print(board_display)
+		self.active = self.init_board(Board.values['hidden'])
+		self.real = self.create_board(bombs)
 	
 	def init_board(self,symbol):
 		return [[symbol for _ in range(self.width)] for _ in range(self.height)]
 
 	def create_board(self,bombs):
 		# initialize board with zeroes
-		board = self.init_board(MBoard.values['zero'])
+		board = self.init_board(Board.values['zero'])
 	
 		# populate board with bombs on random positions
 		distribution = [*it.product(range(self.height),range(self.width))]		
 		self.bombs_pos_all = rn.sample(distribution,k=bombs)
 		for (r,c) in self.bombs_pos_all:
-			board[r][c] = MBoard.values['bomb']
+			board[r][c] = Board.values['bomb']
 
 		# create perimeter around bombs
 		for (r,c) in self.bombs_pos_all:
 			for (rp,cp) in self.perimeter(r,c,type=8):
-				if board[r+rp][c+cp] != MBoard.values['bomb']:
+				if board[r+rp][c+cp] != Board.values['bomb']:
 					board[r+rp][c+cp] += 1
 
 		return board
@@ -131,11 +112,11 @@ class MBoard():
 
 	def evaluate_move(self,r,c,t):
 
-		v = self.board[r][c]
+		v = self.real[r][c]
 		a = self.active[r][c]
 
-		if t == 0 and a == MBoard.values['hidden']:			# if dig (left click)
-			if v == MBoard.values['bomb']:					# dig bomb
+		if t == 0 and a == Board.values['hidden']:			# if dig (left click)
+			if v == Board.values['bomb']:					# dig bomb
 				self.active[r][c] = v
 				return 'lost'
 			elif v > 0:										# dig num
@@ -146,9 +127,9 @@ class MBoard():
 				return 'flood'
 
 		elif t == 1:										# if mark (right click)
-			if a == MBoard.values['hidden']:				# mark hidden
-				self.active[r][c] = MBoard.values['mark']	# set mark
-				if v == MBoard.values['bomb']:				# mark bomb
+			if a == Board.values['hidden']:				# mark hidden
+				self.active[r][c] = Board.values['mark']	# set mark
+				if v == Board.values['bomb']:				# mark bomb
 					self.bombs_pos_found.append([r,c])
 					if self.get_bombs_remaining() == 0:
 						return 'win'
@@ -157,76 +138,73 @@ class MBoard():
 				else:										# mark not bomb
 					return 'mark'
 			
-			elif a == MBoard.values['mark']:				# mark marked
-				self.active[r][c] = MBoard.values['hidden']	# clear mark
-				if v == MBoard.values['bomb']:				# unmark bomb
+			elif a == Board.values['mark']:				# mark marked
+				self.active[r][c] = Board.values['hidden']	# clear mark
+				if v == Board.values['bomb']:				# unmark bomb
 					self.bombs_pos_found.remove([r,c])
 					return 'unmark'
 				else:										# unmark not bomb
 					return 'clear'
 	
 	def flood_fill(self,r,c):
-		# # # # TEST
-		# os.system('cls')
-		# print()
-		# self.display(self.board)
-		# print()
-		# self.display(self.active)
-		# print()
-		# # # # TEST
 	
-		v = self.board[r][c]
+		v = self.real[r][c]
 		# a = self.active[r][c]
 
-		if v == MBoard.values['bomb']:					# bomb: do nothing
+		if v == Board.values['bomb']:					# bomb: do nothing
 			return										# do not reveal
 		elif v > 0:										# on boundary: reveal
 			self.active[r][c] = v						# reveal num
 		elif v == 0:									# empty: dig, recurse
-			self.active[r][c] = MBoard.values['empty']	# reveal empty
+			self.active[r][c] = Board.values['empty']	# reveal empty
 			# check perimeter around empty cells
 			for (rp,cp) in self.perimeter(r,c,type=8):
-				if self.active[r+rp][c+cp] == MBoard.values['hidden']:
+				if self.active[r+rp][c+cp] == Board.values['hidden']:
 					self.flood_fill(r+rp,c+cp)
 
 class Interface():
 	config = {
 		"d_sep": '- ',
-		"m_sep": 20,
-		'h_sep': True,
-		'h_space': 1,
-		'v_sep': True,
-		'v_space': 1}
+		"m_sep": 20}
 
 	separator = config['d_sep'] * config['m_sep']
-
-	palette = {
-		0: '\x1b[38;5;245m',
-		1: '\x1b[1;34;40m',
-		2: '\x1b[1;32;40m',
-		3: '\x1b[1;31;40m',
-		4: '\x1b[1;33;40m',
-		5: '\x1b[1;35;40m',
-		6: '\x1b[1;37;40m',
-		7: '\x1b[1;36;40m',
-		8: '\x1b[1;30;40m',
-		MBoard.values['bomb']: '\x1b[0;37;41m',
-		MBoard.values['mark']: '\x1b[0;37;40m',
-		MBoard.values['empty']: '\x1b[0;37;40m',
-		MBoard.values['hidden']: '\x1b[0;37;40m',
-		MBoard.values['space']: '\x1b[0;37;40m',
-		MBoard.values['sep']: '\x1b[0;37;40m',
-		MBoard.values['cross']: '\x1b[0;37;40m',
-		"ENDC": '\x1b[0m'}
 	
-	class Message():
-		def __init__(self,text,sep=' ',end='\n'):
+	class SimpleMessage():
+		def __init__(self,
+			   text='',
+			   sep=' ',
+			   end='\n'):
+
 			self.text = text
 			self.sep = sep
 			self.end = end			
-		
+
 		def show(self):
 			print(self.text,sep=self.sep,end=self.end)
+
+	class MultiMessage():
+		def __init__(self,
+			   lines='',
+			   seps=' ',
+			   ends='\n',
+			   length=0):
+			
+			length = length or len(lines)
+						
+			def init_list(L,length,default):
+				return [default]*length if L==default else L
+			
+			lines = init_list(lines,length,'')
+			seps = init_list(seps,length,' ')
+			ends = init_list(ends,length,'\n')
+
+			self.messages = []
+			for (l,s,e) in zip(lines,seps,ends):
+				self.messages.append(Interface.SimpleMessage(l,s,e))
+		
+		def show(self):
+			for m in self.messages:
+				m.show()
 
 	class SimpleGetter():
 		def __init__(self,
@@ -246,7 +224,7 @@ class Interface():
 			i_test = False
 			while i_test == False:
 				try:
-					Interface.Message(self.choice_label,end=' ').show()
+					Interface.SimpleMessage(self.choice_label,end=' ').show()
 					choice = input().split(self.choice_sep)
 
 					if not self.choice_test:
@@ -257,21 +235,24 @@ class Interface():
 						assert self.choice_test[i](c)						
 						choice[i] = c
 				except:
-					Interface.Message(self.choice_error).show()
+					Interface.SimpleMessage(self.choice_error).show()
 					i_test == False
 				else:
 					i_test = True
 				finally:
-					Interface.Message(Interface.separator)
+					Interface.SimpleMessage(Interface.separator)
 			return choice
 
 	class MultiGetter():
-		def __init__(self,length,
+		def __init__(self,
 			   choice_labels='',
 			   choice_seps=' ',
 			   choice_types=None,
 			   choice_tests=None,
-			   choice_errors=None):
+			   choice_errors=None,
+			   length=0):
+			
+			length = length or len(choice_labels)
 			
 			def init_list(L,length,default):
 				return [default]*length if L==default else L
@@ -319,20 +300,20 @@ class Interface():
 				choice_error)
 		
 		def show(self):
-			Interface.Message('\n'+self.title).show()
-			Interface.Message(Interface.separator).show()
+			Interface.SimpleMessage('\n'+self.title).show()
+			Interface.SimpleMessage(Interface.separator).show()
 
 			for option in self.options:
-				Interface.Message(option).show()
+				Interface.SimpleMessage(option).show()
 
-			Interface.Message(Interface.separator).show()
+			Interface.SimpleMessage(Interface.separator).show()
 
 			return Interface.SimpleGetter.get_input(self.getter)
 
 class Menus():
 	class MainMenu():
 		def __init__(self):
-			mc = MBoard.config
+			mc = Board.config
 			self.menu = Interface.Menu()
 			self.menu.title = "GLAVNI MENU"
 
@@ -359,11 +340,11 @@ class Menus():
 	
 	class CustomSize():
 		def __init__(self):
-			mc = MBoard.config
+			mc = Board.config
 
 			labels = (
-				f"Sirina [{mc['w_min']}-{mc['w_max']}] ",
-				f"Visina [{mc['h_min']}-{mc['h_max']}] ")
+				f"> Sirina [{mc['w_min']}-{mc['w_max']}] ",
+				f"> Visina [{mc['h_min']}-{mc['h_max']}] ")
 
 			seps = (' ',' ')
 
@@ -375,7 +356,7 @@ class Menus():
 
 			errors = ('Pogresan unos!','Pogresan unos!')
 
-			self.gwh = Interface.MultiGetter(2,labels,seps,types,tests,errors)
+			self.gwh = Interface.MultiGetter(labels,seps,types,tests,errors)
 		
 		def show(self):
 			return self.gwh.get_inputs()
@@ -383,7 +364,7 @@ class Menus():
 	class CustomBombs():
 		def __init__(self,width,height):
 			self.gb = Interface.SimpleGetter()
-			self.gb.choice_label = f"Bombe [1-{width*height-1}] "
+			self.gb.choice_label = f"> Bombe [1-{width*height-1}] "
 			self.gb.choice_sep = ' '
 			self.gb.choice_type = (int,)
 			self.gb.choice_test = (lambda x: (x>=1 and x<=width*height-1),)
@@ -392,90 +373,275 @@ class Menus():
 		def show(self):
 			return self.gb.get_input()			
 
-def play(difficulty):
-	mb = MBoard(difficulty)
+	class GetMove():
+		def __init__(self,width,height):
+			self.move = Interface.SimpleGetter()
+			self.move.choice_label = "\n> unesi koordinate i tip poteza: [r c t] ili [x]: "
+			self.move.choice_sep = ' '
+			self.move.choice_type = (str,int,int,)
+			self.move.choice_test = (
+				lambda r: r=='x' or (int(r)>=0 and int(r)<=height),
+				lambda c: (c>=0 and c<=width),
+				lambda t: t in [0,1],)
+			self.move.choice_error = 'Pogresan unos!'
+		
+		def show(self):
+			result = self.move.get_input()
+			r = result[0]
+			if r != 'x':
+				(r,c,t) = result
+				return (int(r),c,t)
+			else:
+				return (r,'','')
+
+class Graphics():
+	config = {
+		'h_separate': False,
+		'h_spacing': 1,
+		'v_separate': True,
+		'v_spacing': 0,
+		'value_width': 1,
+		'axis_name_width':2}
+
+	values ={
+		"h_space": ' ',
+		"v_space": ' ',
+		"h_sep": '|',
+		"v_sep": '-',
+		"cross": '+',
+		"corner": 'X'}
+
+	palette = {
+		0: '\x1b[38;5;245m',
+		1: '\x1b[1;34;40m',
+		2: '\x1b[1;32;40m',
+		3: '\x1b[1;31;40m',
+		4: '\x1b[1;33;40m',
+		5: '\x1b[1;35;40m',
+		6: '\x1b[1;37;40m',
+		7: '\x1b[1;36;40m',
+		8: '\x1b[1;30;40m',
+		Board.values['hidden']: '\x1b[0;37;40m',
+		Board.values['empty']: '\x1b[0;37;40m',
+		Board.values['bomb']: '\x1b[0;37;41m',
+		Board.values['mark']: '\x1b[38;5;52m',
+		values['h_space']: '\x1b[0;37;40m',
+		values['v_space']: '\x1b[0;37;40m',
+		values['h_sep']: '\x1b[0;37;40m',
+		values['v_sep']: '\x1b[0;37;40m',
+		values['cross']: '\x1b[0;37;40m',
+		values['corner']: '\x1b[0;37;40m',
+		"ENDC": '\x1b[0m'}
+
+	def __init__(self):
+		...
+	
+	def render(self,board:'Board',board_type):
+		if board_type not in ['real','active']:
+			raise ValueError("board: real or active")
+		elif board_type == 'real':
+			board_chosen = board.real
+		elif board_type == 'active':
+			board_chosen = board.active
+
+		# short names for containters
+		gc = Graphics.config
+		gv = Graphics.values
+
+		# if separate false override separator to none
+		sep = gv['h_sep'] if gc['v_separate'] == True else ' '
+
+		# short names for common values
+		# value cells
+		vhs = gc['h_spacing']*gv['h_space']
+		vhst = vhs+gc['value_width']*gv['h_space']+vhs
+		# separator cells
+		shs = gc['h_spacing']+gc['value_width']+gc['h_spacing']
+		shst = shs*gv['v_sep']
+		# title cells
+		ths = (gc['h_spacing']+(gc['value_width']-gc['axis_name_width']))*gv['h_space']
+		thst = vhs+"{value:0{width}}"+ths
+
+		def add_separator_row():
+			board_separator = ""
+
+			# blank rows
+			if gc['v_spacing']:
+				for _ in range(gc['v_spacing']):
+					board_separator+='\n'+sep
+					for _ in range(board.width+2):
+						board_separator+=vhst+sep
+			
+			# separator row:
+			if gc['h_separate']:
+				board_separator+='\n'+gv['cross']
+				for _ in range(board.width+2):
+					board_separator+=shst+gv['cross']
+
+			# blank rows
+			if gc['v_spacing']:
+				for _ in range(gc['v_spacing']):
+					board_separator+='\n'+sep
+					for _ in range(board.width+2):
+						board_separator+=vhst+sep
+			
+			return board_separator
+
+		def add_corner_cell():
+			return vhs+gc['value_width']*gv['corner']+vhs+sep
+
+		def add_column_titles():
+			board_titles = ""
+			for i in range(board.width):
+				board_titles+=thst.format(value=i,width=gc['axis_name_width'])+sep
+			return board_titles
+
+		def add_title_row():
+			board_title = ""
+			# corner cell
+			board_title+=add_corner_cell()
+			# column titles
+			board_title+=add_column_titles()
+			# corner cell
+			board_title+=add_corner_cell()
+			return board_title
+
+		def add_row_titles(r):
+			return thst.format(value=r,width=gc['axis_name_width'])+sep
+
+		def add_value_cells(r):
+			cell_display = ""
+			for c in range(board.width):
+				value = board_chosen[r][c]
+				color_start = Graphics.palette[value]
+				color_end = Graphics.palette["ENDC"]
+
+				cell_display+=vhs+color_start+str(value)+color_end+vhs+sep
+			return cell_display
+
+		# start empty
+		board_display = ''
+
+		board_display+=sep
+		# title row
+		board_display+=add_title_row()
+		# separate from values
+		board_display+=add_separator_row()
+
+		for r in range(board.height):
+			board_display+='\n'+sep
+			# row titles
+			board_display+=add_row_titles(r)
+			# value cells
+			board_display+=add_value_cells(r)
+			# row titles
+			board_display+=add_row_titles(r)
+			# separate from next row
+			board_display+=add_separator_row()
+
+		board_display+='\n'+sep
+		# title row
+		board_display+=add_title_row()
+
+		print(board_display)
+
+class Game():
+	title = "MINESWEEPER"
+
+	BEGINNER = 'b'
+	INTERMEDIATE = 'i'
+	EXPERT = 'e'
+	CUSTOM = 'c'	
+
+	def __init__(self):
+		self.board = None
+		self.menus = Menus()
+		self.graphics = Graphics()
+	
+	def init_game(self,difficulty,settings):
+		if difficulty == Game.CUSTOM:
+			# appends/modifies 'custom' key in Board
+			Board.difficulty[Game.CUSTOM] = settings
+		self.board = Board(difficulty)
+	
+	def quit_game(self):
+		Interface.SimpleMessage("Hvala i doviđenja").show()
+		exit()
+
+def play(ms:'Game'):
 	
 	def show_board():
+		nonlocal ms
+
 		os.system('cls')
-		print("\nINICIJALIZIRANA PLOCA")
-		mb.display(mb.board)
-		print("> OTVORENA ZA TESTIRANJE")
+		# # # TEST
+		Interface.SimpleMessage("\nINICIJALIZIRANA PLOCA").show()
+		ms.graphics.render(ms.board,'real')
+		Interface.SimpleMessage("> OTVORENA ZA TESTIRANJE").show()
+		# # # TEST
 
-		print("\nAKTIVNA PLOCA")
-		mb.display(mb.active)
-		print(f"> PREOSTALO BOMBI: {mb.get_bombs_remaining()}")
+		Interface.SimpleMessage("\nAKTIVNA PLOCA").show()
+		ms.graphics.render(ms.board,'active')
+		Interface.SimpleMessage(f"> PREOSTALO BOMBI: {ms.board.get_bombs_remaining()}").show()
 
-		print("\nMINESWEEPER")
-		print(Interface.config['d_sep'])
-		print("> UPUTA: r = ## red, c = ## stupac, t = tip poteza")
-		print("> UPUTA: tip poteza: 0 = iskopaj, 1 = (od)markiraj")
-		print("> UPUTA: za izlaz iz igre umjesto poteza unesi [x]")
+		lines = []
+		lines.append('\n'+ms.title)
+		lines.append(Interface.separator)
+		lines.append("> UPUTA: r = ## red, c = ## stupac, t = tip poteza")
+		lines.append("> UPUTA: tip poteza: 0 = iskopaj, 1 = (od)markiraj")
+		lines.append("> UPUTA: za izlaz iz igre umjesto poteza unesi [x]")
+		Interface.MultiMessage(lines).show()
 
-	new_move = True
+	new_move = True	
 	while new_move == True:
 		show_board()
 
-		i_test=False
-		while i_test == False:
-			try:
-				move = input("\n> unesi koordinate i tip poteza: [r c t] ili [x]: ")
-				if move.upper() =='X':
-					new_move = False
-					break
+		(r,c,t) = ms.menus.GetMove(ms.board.width,ms.board.height).show()
 
-				move = move.split()
-
-				assert len(move)==3
-				(r,c,t) = map(int,move)
-				assert r >= 0 and r < mb.height
-				assert c >= 0 and c < mb.width
-				assert t in [0,1]
-			except:
-				print("Pogrešan unos!")
-				i_test = False
-			else:
-				i_test = True
-			finally:
-				print(Interface.config['d_sep'])
+		if str(r).upper() == 'X':
+			new_move=False
+			break
 
 		if new_move == True:
-			result = mb.evaluate_move(r,c,t)
+			result = ms.board.evaluate_move(r,c,t)
 
 			if result == 'lost':
 				show_board()
-				print("\nBOOM!")
+				Interface.SimpleMessage("\nBOOM!").show()
 				new_move = False
 			elif result == 'win':
 				show_board()
-				print("\nPOBJEDA!")
+				Interface.SimpleMessage("\nPOBJEDA!").show()
 				new_move = False
 
-def quit_game():
-	# all necessarry cleanup, db.op,etc.
-	Interface.Message("Hvala i doviđenja.").show()
-	exit()
-
 def main():
-	Interface.Message("MINESWEEPER").show()
+	ms = Game()
+
+	os.system('cls')
+	Interface.SimpleMessage(ms.title).show()
 	
 	new_game = True
 	while new_game:
-		(new_game,) = Menus.MainMenu().show()
+		(new_game,) = ms.menus.MainMenu().show()
 
+		settings = ()
 		if new_game == 0:
-			quit_game()
+			ms.quit_game()
 		elif new_game == 1:
-			play('b')
+			difficulty = Game.BEGINNER
 		elif new_game == 2:
-			play('i')
+			difficulty = Game.INTERMEDIATE
 		elif new_game == 3:
-			play('e')
+			difficulty = Game.EXPERT
 		elif new_game == 4:
-			((width,),(height,)) = Menus.CustomSize().show()
-			(bombs,) = Menus.CustomBombs(width,height).show()
+			difficulty = Game.CUSTOM
 
-			MBoard.difficulty['c']=(width,height,bombs)
+			((width,),(height,)) = ms.menus.CustomSize().show()
+			(bombs,) = ms.menus.CustomBombs(width,height).show()
+			settings = (width,height,bombs)
 
-			play('c')
+		ms.init_game(difficulty,settings)
+
+		play(ms)
 
 main()
