@@ -4,6 +4,16 @@ import itertools as it
 import TreeNode as tn
 import urwid as uw
 
+# boje:
+# 1 blue
+# 2 green
+# 3 red
+# 4 dark blue
+# 5 brown
+# 6 Cyan
+# 7 Black
+# 8 Grey
+
 class Board():
 	config = {
 		'w_min':5,
@@ -711,6 +721,33 @@ class Graphics():
 
 	def get_move(self,active_board):
 		...
+
+	class KeyboardMode():
+		
+		palette = {
+			0: '\x1b[38;5;245m',
+			1: '\x1b[1;34;40m',
+			2: '\x1b[1;32;40m',
+			3: '\x1b[1;31;40m',
+			4: '\x1b[1;33;40m',
+			5: '\x1b[1;35;40m',
+			6: '\x1b[1;37;40m',
+			7: '\x1b[1;36;40m',
+			8: '\x1b[1;30;40m',
+			Board.values['hidden']: '\x1b[0;37;40m',
+			Board.values['empty']: '\x1b[0;37;40m',
+			Board.values['bomb']: '\x1b[0;37;41m',
+			Board.values['mark']: '\x1b[38;5;52m',
+			values['h_space']: '\x1b[0;37;40m',
+			values['v_space']: '\x1b[0;37;40m',
+			values['h_sep']: '\x1b[0;37;40m',
+			values['v_sep']: '\x1b[0;37;40m',
+			values['cross']: '\x1b[0;37;40m',
+			values['corner']: '\x1b[0;37;40m',
+			"ENDC": '\x1b[0m'}
+		...
+	
+	class MouseMode():
 
 class Game():
 	title = "MINESWEEPER"
