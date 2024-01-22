@@ -561,7 +561,7 @@ class Graphics():
 		'v_spacing': 0,
 		'value_width': 1,
 		'axis_name_width':2}
-
+	
 	values ={
 		"h_space": ' ',
 		"v_space": ' ',
@@ -570,184 +570,209 @@ class Graphics():
 		"cross": '+',
 		"corner": 'X'}
 
-	palette = {
-		0: '\x1b[38;5;245m',
-		1: '\x1b[1;34;40m',
-		2: '\x1b[1;32;40m',
-		3: '\x1b[1;31;40m',
-		4: '\x1b[1;33;40m',
-		5: '\x1b[1;35;40m',
-		6: '\x1b[1;37;40m',
-		7: '\x1b[1;36;40m',
-		8: '\x1b[1;30;40m',
-		Board.values['hidden']: '\x1b[0;37;40m',
-		Board.values['empty']: '\x1b[0;37;40m',
-		Board.values['bomb']: '\x1b[0;37;41m',
-		Board.values['mark']: '\x1b[38;5;52m',
-		values['h_space']: '\x1b[0;37;40m',
-		values['v_space']: '\x1b[0;37;40m',
-		values['h_sep']: '\x1b[0;37;40m',
-		values['v_sep']: '\x1b[0;37;40m',
-		values['cross']: '\x1b[0;37;40m',
-		values['corner']: '\x1b[0;37;40m',
-		"ENDC": '\x1b[0m'}
-
-	input_types = {0: "keyboard", 1: "mouse"}
-
 	def __init__(self,input_mode = 0):
-		if input_mode not in Graphics.input_types:
-			raise ValueError("Graphics input: 0|1")
-		self.input_mode = Graphics.input_types[input_mode]
-	
-	def render(self,board:'Board',board_type):
-		if board_type not in ['real','active']:
-			raise ValueError("board: real or active")
-		elif board_type == 'real':
-			board_chosen = board.real
-		elif board_type == 'active':
-			board_chosen = board.active
+		r = range(len(self.renderers))
+		if input_mode not in r:
+			raise ValueError(f"Graphics input: {'|'.join(r)}")
+		self.set_renderer(input_mode)
 
-		# short names for containters
-		gc = Graphics.config
-		gv = Graphics.values
+	class KeyboardMode():	
 
-		# if separate false override separator to none
-		sep = gv['h_sep'] if gc['v_separate'] == True else ' '
+		def __init__(self,config,values):
+			self.config = config
+			self.values = values
+			self.palette = {
+				0: '\x1b[38;5;245m',
+				1: '\x1b[1;34;40m',
+				2: '\x1b[1;32;40m',
+				3: '\x1b[1;31;40m',
+				4: '\x1b[1;33;40m',
+				5: '\x1b[1;35;40m',
+				6: '\x1b[1;37;40m',
+				7: '\x1b[1;36;40m',
+				8: '\x1b[1;30;40m',
+				Board.values['hidden']: '\x1b[0;37;40m',
+				Board.values['empty']: '\x1b[0;37;40m',
+				Board.values['bomb']: '\x1b[0;37;41m',
+				Board.values['mark']: '\x1b[38;5;52m',
+				self.values['h_space']: '\x1b[0;37;40m',
+				self.values['v_space']: '\x1b[0;37;40m',
+				self.values['h_sep']: '\x1b[0;37;40m',
+				self.values['v_sep']: '\x1b[0;37;40m',
+				self.values['cross']: '\x1b[0;37;40m',
+				self.values['corner']: '\x1b[0;37;40m',
+				"ENDC": '\x1b[0m'}
 
-		# short names for common values
-		# value cells
-		vhs = gc['h_spacing']*gv['h_space']
-		vhst = vhs+gc['value_width']*gv['h_space']+vhs
-		# separator cells
-		shs = gc['h_spacing']+gc['value_width']+gc['h_spacing']
-		shst = shs*gv['v_sep']
-		# title cells
-		ths = (gc['h_spacing']+(gc['value_width']-gc['axis_name_width']))*gv['h_space']
-		thst = vhs+"{value:0{width}}"+ths
+		def render(self,board:'Board',board_type):
+			if board_type not in ['real','active']:
+				raise ValueError("board: real or active")
+			elif board_type == 'real':
+				board_chosen = board.real
+			elif board_type == 'active':
+				board_chosen = board.active
 
-		def add_separator_row():
-			board_separator = ""
+			# short names for containters
+			gc = Graphics.config
+			gv = Graphics.values
 
-			# blank rows
-			if gc['v_spacing']:
-				for _ in range(gc['v_spacing']):
-					board_separator+='\n'+sep
-					for _ in range(board.width+2):
-						board_separator+=vhst+sep
-			
-			# separator row:
-			if gc['h_separate']:
-				board_separator+='\n'+gv['cross']
-				for _ in range(board.width+2):
-					board_separator+=shst+gv['cross']
+			# if separate false override separator to none
+			sep = gv['h_sep'] if gc['v_separate'] == True else ' '
 
-			# blank rows
-			if gc['v_spacing']:
-				for _ in range(gc['v_spacing']):
-					board_separator+='\n'+sep
-					for _ in range(board.width+2):
-						board_separator+=vhst+sep
-			
-			return board_separator
-
-		def add_corner_cell():
-			return vhs+gc['value_width']*gv['corner']+vhs+sep
-
-		def add_column_titles():
-			board_titles = ""
-			for i in range(board.width):
-				board_titles+=thst.format(value=i,width=gc['axis_name_width'])+sep
-			return board_titles
-
-		def add_title_row():
-			board_title = ""
-			# corner cell
-			board_title+=add_corner_cell()
-			# column titles
-			board_title+=add_column_titles()
-			# corner cell
-			board_title+=add_corner_cell()
-			return board_title
-
-		def add_row_titles(r):
-			return thst.format(value=r,width=gc['axis_name_width'])+sep
-
-		def add_value_cells(r):
-			cell_display = ""
-			for c in range(board.width):
-				value = board_chosen[r][c]
-				color_start = Graphics.palette[value]
-				color_end = Graphics.palette["ENDC"]
-
-				cell_display+=vhs+color_start+str(value)+color_end+vhs+sep
-			return cell_display
-
-		# start empty
-		board_display = ''
-
-		board_display+=sep
-		# title row
-		board_display+=add_title_row()
-		# separate from values
-		board_display+=add_separator_row()
-
-		for r in range(board.height):
-			board_display+='\n'+sep
-			# row titles
-			board_display+=add_row_titles(r)
+			# short names for common values
 			# value cells
-			board_display+=add_value_cells(r)
-			# row titles
-			board_display+=add_row_titles(r)
-			# separate from next row
+			vhs = gc['h_spacing']*gv['h_space']
+			vhst = vhs+gc['value_width']*gv['h_space']+vhs
+			# separator cells
+			shs = gc['h_spacing']+gc['value_width']+gc['h_spacing']
+			shst = shs*gv['v_sep']
+			# title cells
+			ths = (gc['h_spacing']+(gc['value_width']-gc['axis_name_width']))*gv['h_space']
+			thst = vhs+"{value:0{width}}"+ths
+
+			def add_separator_row():
+				board_separator = ""
+
+				# blank rows
+				if gc['v_spacing']:
+					for _ in range(gc['v_spacing']):
+						board_separator+='\n'+sep
+						for _ in range(board.width+2):
+							board_separator+=vhst+sep
+				
+				# separator row:
+				if gc['h_separate']:
+					board_separator+='\n'+gv['cross']
+					for _ in range(board.width+2):
+						board_separator+=shst+gv['cross']
+
+				# blank rows
+				if gc['v_spacing']:
+					for _ in range(gc['v_spacing']):
+						board_separator+='\n'+sep
+						for _ in range(board.width+2):
+							board_separator+=vhst+sep
+				
+				return board_separator
+
+			def add_corner_cell():
+				return vhs+gc['value_width']*gv['corner']+vhs+sep
+
+			def add_column_titles():
+				board_titles = ""
+				for i in range(board.width):
+					board_titles+=thst.format(value=i,width=gc['axis_name_width'])+sep
+				return board_titles
+
+			def add_title_row():
+				board_title = ""
+				# corner cell
+				board_title+=add_corner_cell()
+				# column titles
+				board_title+=add_column_titles()
+				# corner cell
+				board_title+=add_corner_cell()
+				return board_title
+
+			def add_row_titles(r):
+				return thst.format(value=r,width=gc['axis_name_width'])+sep
+
+			def add_value_cells(r):
+				cell_display = ""
+				for c in range(board.width):
+					value = board_chosen[r][c]
+					color_start = Graphics.palette[value]
+					color_end = Graphics.palette["ENDC"]
+
+					cell_display+=vhs+color_start+str(value)+color_end+vhs+sep
+				return cell_display
+
+			# start empty
+			board_display = ''
+
+			board_display+=sep
+			# title row
+			board_display+=add_title_row()
+			# separate from values
 			board_display+=add_separator_row()
 
-		board_display+='\n'+sep
-		# title row
-		board_display+=add_title_row()
+			for r in range(board.height):
+				board_display+='\n'+sep
+				# row titles
+				board_display+=add_row_titles(r)
+				# value cells
+				board_display+=add_value_cells(r)
+				# row titles
+				board_display+=add_row_titles(r)
+				# separate from next row
+				board_display+=add_separator_row()
 
-		return board_display
+			board_display+='\n'+sep
+			# title row
+			board_display+=add_title_row()
 
-	def display(self,board:'Board',board_type):
-		print(self.render(board,board_type))
+			return board_display
 
-	@staticmethod
-	def translate_move(x,y,active_board):
-		test = True
-		if test:
-			return (True,x,y)
-		else:
-			return (False,x,y)
+		def display(self,board:'Board',board_type):
+			print(self.render(board,board_type))
 
-	def get_move(self,active_board):
-		...
+		@staticmethod
+		def translate_move(x,y,active_board):
+			test = True
+			if test:
+				return (True,x,y)
+			else:
+				return (False,x,y)
 
-	class KeyboardMode():
-		
-		palette = {
-			0: '\x1b[38;5;245m',
-			1: '\x1b[1;34;40m',
-			2: '\x1b[1;32;40m',
-			3: '\x1b[1;31;40m',
-			4: '\x1b[1;33;40m',
-			5: '\x1b[1;35;40m',
-			6: '\x1b[1;37;40m',
-			7: '\x1b[1;36;40m',
-			8: '\x1b[1;30;40m',
-			Board.values['hidden']: '\x1b[0;37;40m',
-			Board.values['empty']: '\x1b[0;37;40m',
-			Board.values['bomb']: '\x1b[0;37;41m',
-			Board.values['mark']: '\x1b[38;5;52m',
-			values['h_space']: '\x1b[0;37;40m',
-			values['v_space']: '\x1b[0;37;40m',
-			values['h_sep']: '\x1b[0;37;40m',
-			values['v_sep']: '\x1b[0;37;40m',
-			values['cross']: '\x1b[0;37;40m',
-			values['corner']: '\x1b[0;37;40m',
-			"ENDC": '\x1b[0m'}
-		...
-	
+		def get_move(self,active_board):
+			...
+
 	class MouseMode():
+
+		def __init__(self,config,values):
+			self.config = config
+			self.values = values
+			self.palette = {
+				0: '',
+				1: '',
+				2: '',
+				3: '',
+				4: '',
+				5: '',
+				6: '',
+				7: '\x1b[1;36;40m',
+				8: '\x1b[1;30;40m',
+				Board.values['hidden']: '',
+				Board.values['empty']: '',
+				Board.values['bomb']: '',
+				Board.values['mark']: '',
+				self.values['v_space']: '',
+				self.values['h_sep']: '',
+				self.values['v_sep']: '',
+				self.values['cross']: '',
+				self.values['corner']: '',
+				"ENDC": '\x1b[0m'}
+
+		def render(self,board:'Board',board_type):
+			...
+
+		def display(self,board:'Board',board_type):
+			...		
+
+		@staticmethod
+		def translate_move(x,y,active_board):
+			test = True
+			if test:
+				return (True,x,y)
+			else:
+				return (False,x,y)
+
+		def get_move(self,active_board):
+			...
+
+	def set_renderer(self,input_mode):
+		self.renderer = self.renderers[input_mode](self.config,self.values)
+	
+	renderers = {0: KeyboardMode, 1: MouseMode}
 
 class Game():
 	title = "MINESWEEPER"
@@ -798,38 +823,39 @@ def configure(ms:'Game',node=None):
 			configure(ms,node=node.parent)
 			# return to previous menu
 		elif choice == 1:
-			ms.graphics.input_mode = Graphics.input_types[0]
+			ms.graphics.set_renderer(0)
 			# set input to keyboard
 			configure(ms,node=node.parent)
 		elif choice == 2:
-			ms.graphics.input_mode = Graphics.input_types[1]
+			ms.graphics.set_renderer(1)
 			# set input to mouse
 			configure(ms,node=node.parent)
 	
 	elif title=="DISPLAY SETTINGS":
-		if choice == 0:
-			configure(ms,node=node.parent)
-			# return to previous menu
-		elif choice == 1:
-			(value,) = ms.menus.ModifyHSeparate(ms.graphics.config['h_separate']).show()
-			ms.graphics.config['h_separate'] = value
-			configure(ms,node)
-			# set horizontal separate on/off
-		elif choice == 2:
-			(value,) = ms.menus.ModifyHSpacing(ms.graphics.config['h_spacing']).show()
-			ms.graphics.config['h_spacing'] = value
-			# set horizontal spacing on/off
-			configure(ms,node)
-		elif choice == 3:
-			(value,) = ms.menus.ModifyVSeparate(ms.graphics.config['v_separate']).show()
-			ms.graphics.config['v_separate'] = value
-			# set vertical separate on/off
-			configure(ms,node)
-		elif choice == 4:
-			(value,) = ms.menus.ModifyVSpacing(ms.graphics.config['v_spacing']).show()
-			ms.graphics.config['v_spacing'] = value
-			# set vertical spacing on/off
-			configure(ms,node)
+		with ms.graphics.renderer.config as rc:
+			if choice == 0:
+				configure(ms,node=node.parent)
+				# return to previous menu
+			elif choice == 1:
+				(value,) = ms.menus.ModifyHSeparate(rc['h_separate']).show()
+				rc['h_separate'] = value
+				configure(ms,node)
+				# set horizontal separate on/off
+			elif choice == 2:
+				(value,) = ms.menus.ModifyHSpacing(rc['h_spacing']).show()
+				rc['h_spacing'] = value
+				# set horizontal spacing on/off
+				configure(ms,node)
+			elif choice == 3:
+				(value,) = ms.menus.ModifyVSeparate(rc['v_separate']).show()
+				rc['v_separate'] = value
+				# set vertical separate on/off
+				configure(ms,node)
+			elif choice == 4:
+				(value,) = ms.menus.ModifyVSpacing(rc['v_spacing']).show()
+				rc['v_spacing'] = value
+				# set vertical spacing on/off
+				configure(ms,node)
 
 def play(ms:'Game'):
 	
@@ -839,12 +865,14 @@ def play(ms:'Game'):
 		os.system('cls')
 		# # # TEST
 		Interface.SimpleMessage("\nINICIJALIZIRANA PLOCA").show()
-		ms.graphics.display(ms.board,'real')
+		image = ms.graphics.renderer.render(ms.board,'real')
+		Interface.SimpleMessage(image).show()
 		Interface.SimpleMessage("> OTVORENA ZA TESTIRANJE").show()
 		# # # TEST
 
 		Interface.SimpleMessage("\nAKTIVNA PLOCA").show()
-		ms.graphics.display(ms.board,'active')
+		image = ms.graphics.renderer.render(ms.board,'active')
+		Interface.SimpleMessage(image).show()
 		Interface.SimpleMessage(f"> PREOSTALO BOMBI: {ms.board.get_bombs_remaining()}").show()
 
 		lines = []
@@ -865,9 +893,9 @@ def play(ms:'Game'):
 			txt.set_text(repr(key))
 
 		image = ''
-		image += "\nINICIJALIZIRANA PLOCA"
-		image += "\n"+ms.graphics.render(ms.board,'real')
-		image += "\n> OTVORENA ZA TESTIRANJE"
+		image += ("\nINICIJALIZIRANA PLOCA")
+		image += "\n"+ms.graphics.renderer.render(ms.board,'real')
+		image += ("\n> OTVORENA ZA TESTIRANJE")
 		image += "\n"
 		image += "\nAKTIVNA PLOCA"
 		image += "\n"+ms.graphics.render(ms.board,'active')
@@ -886,7 +914,7 @@ def play(ms:'Game'):
 	new_move = True	
 	while new_move == True:
 		if ms.graphics.input_mode == "keyboard":
-			show_board_keyboard()
+			ms.graphics.renderer.display()
 			(r,c,t) = ms.menus.GetMove(ms.board.width,ms.board.height).show()
 
 			if str(r).upper() == 'X':
@@ -906,7 +934,7 @@ def play(ms:'Game'):
 					new_move = False
 
 		elif ms.graphics.input_mode == "mouse":
-			show_board_mouse()
+			ms.graphics.renderer.display()
 			new_move=False
 			# # # TEST
 			# get mouse click through graphics
