@@ -2,6 +2,7 @@ import os
 import random as rn
 import itertools as it
 import TreeNode as tn
+import urwid as uw
 
 class Board():
 	config = {
@@ -700,6 +701,17 @@ class Graphics():
 	def display(self,board:'Board',board_type):
 		print(self.render(board,board_type))
 
+	@staticmethod
+	def translate_move(x,y,active_board):
+		test = True
+		if test:
+			return (True,x,y)
+		else:
+			return (False,x,y)
+
+	def get_move(self,active_board):
+		...
+
 class Game():
 	title = "MINESWEEPER"
 
@@ -809,6 +821,12 @@ def play(ms:'Game'):
 	def show_board_mouse():
 		nonlocal ms
 
+		def exit_on_x(key):
+			nonlocal txt
+			if key in ('x','X'):
+				raise uw.ExitMainLoop()
+			txt.set_text(repr(key))
+
 		image = ''
 		image += "\nINICIJALIZIRANA PLOCA"
 		image += "\n"+ms.graphics.render(ms.board,'real')
@@ -823,7 +841,10 @@ def play(ms:'Game'):
 		image += "\n> UPUTA: tip poteza: LC = iskopaj, RC = (od)markiraj"
 		image += "\n> UPUTA: za izlaz iz igre umjesto poteza unesi [x]"
 
-		print(image)
+		txt = uw.Text(image)
+		fill = uw.Filler(txt,'top')
+		loop = uw.MainLoop(fill,unhandled_input=exit_on_x)
+		loop.run()
 
 	new_move = True	
 	while new_move == True:
@@ -848,7 +869,7 @@ def play(ms:'Game'):
 					new_move = False
 
 		elif ms.graphics.input_mode == "mouse":
-			show_board_mouse() # > urwid,curses,...
+			show_board_mouse()
 			new_move=False
 			# # # TEST
 			# get mouse click through graphics

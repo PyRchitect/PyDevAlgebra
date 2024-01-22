@@ -1,4 +1,5 @@
 import curses 
+from curses import wrapper
 
 # screen = curses.initscr() 
 # #curses.noecho() 
@@ -49,22 +50,38 @@ import curses
 
 # curses.wrapper(main)
 
-from curses import wrapper
+
 
 # https://hyperskill.org/blog/post/introduction-to-the-curses-library-in-python-text-based-interfaces
+# def main(stdscr):
+#    stdscr.clear()
+#    stdscr.addstr('Click on the screen...')
+#    curses.mousemask(curses.ALL_MOUSE_EVENTS)
+
+#    while True:
+#        key = stdscr.getch()
+
+#        if key == ord('q'):
+#            break
+#        elif key == curses.KEY_MOUSE:
+#            _, mx, my, _, _ = curses.getmouse()
+#            stdscr.clear()
+#            stdscr.addstr(f'You clicked at {my}, {mx}')
+
+# wrapper(main)
+
+
+
 def main(stdscr):
-   stdscr.clear()
-   stdscr.addstr('Click on the screen...')
-   curses.mousemask(curses.ALL_MOUSE_EVENTS)
+    # Clear screen
+    stdscr.clear()
 
-   while True:
-       key = stdscr.getch()
+    # This raises ZeroDivisionError when i == 10.
+    for i in range(0, 9):
+        v = i-10
+        stdscr.addstr(i, 0, '10 divided by {} is {}'.format(v, 10/v))
 
-       if key == ord('q'):
-           break
-       elif key == curses.KEY_MOUSE:
-           _, mx, my, _, _ = curses.getmouse()
-           stdscr.clear()
-           stdscr.addstr(f'You clicked at {my}, {mx}')
+    stdscr.refresh()
+    stdscr.getkey()
 
 wrapper(main)
