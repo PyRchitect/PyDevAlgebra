@@ -1,7 +1,7 @@
 import os
 import random as rn
 import itertools as it
-import TreeNode as tn
+import tree_node as tn
 
 class Board():
 	config = {
