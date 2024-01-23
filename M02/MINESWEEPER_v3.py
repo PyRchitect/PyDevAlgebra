@@ -807,23 +807,7 @@ def play(ms:'Game'):
 		Interface.MultiMessage(lines).show()
 
 	def show_board_mouse():
-		nonlocal ms
-
-		image = ''
-		image += "\nINICIJALIZIRANA PLOCA"
-		image += "\n"+ms.graphics.render(ms.board,'real')
-		image += "\n> OTVORENA ZA TESTIRANJE"
-		image += "\n"
-		image += "\nAKTIVNA PLOCA"
-		image += "\n"+ms.graphics.render(ms.board,'active')
-		image += f"\n> PREOSTALO BOMBI: {ms.board.get_bombs_remaining()}"
-		image += '\n'+ms.title
-		image += '\n'+Interface.separator
-		image += "\n> UPUTA: polja se otkrivaju/označavaju klikovima miša"
-		image += "\n> UPUTA: tip poteza: LC = iskopaj, RC = (od)markiraj"
-		image += "\n> UPUTA: za izlaz iz igre umjesto poteza unesi [x]"
-
-		print(image)
+		...
 
 	new_move = True	
 	while new_move == True:

@@ -4,16 +4,6 @@ import itertools as it
 import TreeNode as tn
 import urwid as uw
 
-# boje:
-# 1 blue
-# 2 green
-# 3 red
-# 4 dark blue
-# 5 brown
-# 6 Cyan
-# 7 Black
-# 8 Grey
-
 class Board():
 	config = {
 		'w_min':5,
@@ -127,18 +117,18 @@ class Board():
 		v = self.real[r][c]
 		a = self.active[r][c]
 
-		if t == 0 and a == Board.values['hidden']:			# if dig (left click)
-			if v == Board.values['bomb']:					# dig bomb
+		if t == 0 and a == Board.values['hidden']:	# if dig (left click)
+			if v == Board.values['bomb']:				# dig bomb
 				self.active[r][c] = v
 				return 'lost'
-			elif v > 0:										# dig num
+			elif v > 0:									# dig num
 				self.active[r][c] = v
 				return 'dig'
-			elif v == 0:									# dig empty
+			elif v == 0:								# dig empty
 				self.flood_fill(r,c)
 				return 'flood'
 
-		elif t == 1:										# if mark (right click)
+		elif t == 1:								# if mark (right click)
 			if a == Board.values['hidden']:				# mark hidden
 				self.active[r][c] = Board.values['mark']	# set mark
 				if v == Board.values['bomb']:				# mark bomb
@@ -476,7 +466,7 @@ class Menus():
 		def show(self):
 			result = self.move.get_input()
 			r = result[0]
-			if r != 'x' and len((r,c,t))==3:
+			if r != 'x':
 				(r,c,t) = result
 				return (int(r),c,t)
 			else:
@@ -612,8 +602,8 @@ class Graphics():
 				board_chosen = board.active
 
 			# short names for containters
-			gc = Graphics.config
-			gv = Graphics.values
+			gc = self.config
+			gv = self.values
 
 			# if separate false override separator to none
 			sep = gv['h_sep'] if gc['v_separate'] == True else ' '
@@ -680,8 +670,8 @@ class Graphics():
 				cell_display = ""
 				for c in range(board.width):
 					value = board_chosen[r][c]
-					color_start = Graphics.palette[value]
-					color_end = Graphics.palette["ENDC"]
+					color_start = self.palette[value]
+					color_end = self.palette["ENDC"]
 
 					cell_display+=vhs+color_start+str(value)+color_end+vhs+sep
 				return cell_display
@@ -712,62 +702,276 @@ class Graphics():
 
 			return board_display
 
-		def display(self,board:'Board',board_type):
-			print(self.render(board,board_type))
+		def display(self,ms:'Game'):
 
-		@staticmethod
-		def translate_move(x,y,active_board):
+			os.system('cls')
+			# # # TEST
+			Interface.SimpleMessage("\nINICIJALIZIRANA PLOCA").show()
+			Interface.SimpleMessage(self.render(ms.board,'real')).show()
+			Interface.SimpleMessage("> OTVORENA ZA TESTIRANJE").show()
+			# # # TEST
+
+			Interface.SimpleMessage("\nAKTIVNA PLOCA").show()
+			Interface.SimpleMessage(self.render(ms.board,'active')).show()
+			Interface.SimpleMessage(f"> PREOSTALO BOMBI: {ms.board.get_bombs_remaining()}").show()
+
+			lines = []
+			lines.append('\n'+ms.title)
+			lines.append(Interface.separator)
+			lines.append("> UPUTA: r = ## red, c = ## stupac, t = tip poteza")
+			lines.append("> UPUTA: tip poteza: 0 = iskopaj, 1 = (od)markiraj")
+			lines.append("> UPUTA: za izlaz iz igre umjesto poteza unesi [x]")
+			Interface.MultiMessage(lines).show()
+
+		def __enter__(self):
+			return self
+	
+		def __exit__(self, exc_type, exc_value, exc_traceback):
+			...
+
+		def translate_move(x,y):
 			test = True
 			if test:
 				return (True,x,y)
 			else:
 				return (False,x,y)
-
-		def get_move(self,active_board):
-			...
 
 	class MouseMode():
 
 		def __init__(self,config,values):
 			self.config = config
 			self.values = values
-			self.palette = {
-				0: '',
-				1: '',
-				2: '',
-				3: '',
-				4: '',
-				5: '',
-				6: '',
-				7: '\x1b[1;36;40m',
-				8: '\x1b[1;30;40m',
-				Board.values['hidden']: '',
-				Board.values['empty']: '',
-				Board.values['bomb']: '',
-				Board.values['mark']: '',
-				self.values['v_space']: '',
-				self.values['h_sep']: '',
-				self.values['v_sep']: '',
-				self.values['cross']: '',
-				self.values['corner']: '',
-				"ENDC": '\x1b[0m'}
+			self.palette = [ 
+				('0','light gray','default'),
+				('1','light blue','default'),
+				('2','light green','default'),
+				('3','light red','default'),
+				('4','dark blue','default'),
+				('5','brown','default'),
+				('6','light cyan','default'),
+				('7','black','default'),
+				('8','dark gray','default'),
+				(Board.values['hidden'],'default','default'),
+				(Board.values['empty'],'default','default'),
+				(Board.values['bomb'],'white','light red'),
+				(Board.values['mark'],'dark red','default'),
+				(self.values['v_space'],'default','default'),
+				(self.values['h_sep'],'default','default'),
+				(self.values['v_sep'],'default','default'),
+				(self.values['cross'],'default','default'),
+				(self.values['corner'],'default','default'),
+				("ENDC",'default','default')]
 
 		def render(self,board:'Board',board_type):
+			if board_type not in ['real','active']:
+				raise ValueError("board: real or active")
+			elif board_type == 'real':
+				board_chosen = board.real
+			elif board_type == 'active':
+				board_chosen = board.active
+
+			# short names for containters
+			gc = self.config
+			gv = self.values
+
+			# if separate false override separator to none
+			sep = gv['h_sep'] if gc['v_separate'] == True else ' '
+
+			# short names for common values
+			# value cells
+			vhs = gc['h_spacing']*gv['h_space']
+			vhst = vhs+gc['value_width']*gv['h_space']+vhs
+			# separator cells
+			shs = gc['h_spacing']+gc['value_width']+gc['h_spacing']
+			shst = shs*gv['v_sep']
+			# title cells
+			ths = (gc['h_spacing']+(gc['value_width']-gc['axis_name_width']))*gv['h_space']
+			thst = vhs+"{value:0{width}}"+ths
+
+			def add_separator_row():
+				board_separator = []
+
+				# blank rows
+				if gc['v_spacing']:
+					for _ in range(gc['v_spacing']):
+						board_separator.append(('\n'+sep))
+						for _ in range(board.width+2):
+							board_separator.append((vhst+sep))
+				
+				# separator row:
+				if gc['h_separate']:
+					board_separator.append(('\n'+gv['cross']))
+					for _ in range(board.width+2):
+						board_separator.append((shst+gv['cross']))
+
+				# blank rows
+				if gc['v_spacing']:
+					for _ in range(gc['v_spacing']):
+						board_separator.append(('\n'+sep))
+						for _ in range(board.width+2):
+							board_separator.append((vhst+sep))
+				
+				return board_separator
+
+			def add_corner_cell():
+				return (vhs+gc['value_width']*gv['corner']+vhs+sep)
+
+			def add_column_titles():
+				board_titles = []
+				for i in range(board.width):
+					board_titles.append((thst.format(value=i,width=gc['axis_name_width'])+sep))
+				return board_titles
+
+			def add_title_row():
+				board_title = []
+				# corner cell
+				board_title.append(add_corner_cell())
+				# column titles
+				board_title.extend(add_column_titles())
+				# corner cell
+				board_title.append(add_corner_cell())
+				return board_title
+
+			def add_row_titles(r):
+				return (thst.format(value=r,width=gc['axis_name_width'])+sep)
+
+			def add_value_cells(r):
+				#palette = [("text", "light blue", 'default')]
+				cell_display = []
+				for c in range(board.width):
+					value = board_chosen[r][c]
+					#cell_display.append((self.palette[value],vhs+str(value)+vhs+sep))
+					cell_display.append((vhs))
+					cell_display.append((str(value),str(value)))
+					cell_display.append((vhs+sep))
+				return cell_display
+
+			# start empty
+			board_display = []
+
+			board_display.append((sep))
+			# title row
+			board_display.extend(add_title_row())
+			# separate from values
+			board_display.extend(add_separator_row())
+
+			for r in range(board.height):
+				board_display.append(('\n'+sep))
+				# row titles
+				board_display.append(add_row_titles(r))
+				# value cells
+				board_display.extend(add_value_cells(r))
+				# row titles
+				board_display.append(add_row_titles(r))
+				# separate from next row
+				board_display.extend(add_separator_row())
+
+			board_display.append(('\n'+sep))
+			# title row
+			board_display.extend(add_title_row())
+
+			return board_display
+
+		def display(self,ms:'Game'):
+
+			image = []
+
+			os.system('cls')
+			# # # TEST
+			image.append(("\nINICIJALIZIRANA PLOCA\n"))
+			image.extend(self.render(ms.board,'real'))
+			image.append(("\n> OTVORENA ZA TESTIRANJE\n"))
+			# # # TEST
+
+			image.append(("\nAKTIVNA PLOCA\n"))
+			image.extend(self.render(ms.board,'active'))
+			image.append((f"\n> PREOSTALO BOMBI: {ms.board.get_bombs_remaining()}\n"))
+
+			image.append((f'\n{ms.title}\n'))
+			image.append((Interface.separator))
+			image.append(("\n> UPUTA: polja se otkrivaju/označavaju klikovima miša"))
+			image.append(("\n> UPUTA: tip poteza: LC = iskopaj, RC = (od)markiraj"))
+			image.append(("\n> UPUTA: za izlaz iz igre umjesto poteza unesi [x]\n"))			
+
+			return self.MSEdit(image)
+		
+		class MSEdit(uw.Edit):
+			_selectable = True
+			signals = ['exit','click']
+
+			def keypress(self,size,key):
+				if key == "x":
+					self._emit('exit')
+				else:
+					return key
+			
+			def mouse_event(self,size,event,button,x,y,focus):
+				if not uw.util.is_mouse_press(event) or button not in [1,3]:
+					return False
+				else:
+					if button == 1:					# left click
+						self._emit('click',y,x,0)	# (r,c,t = 0)
+					elif button == 3:				# right click
+						self._emit('click',y,x,1)	# (r,c,t = 1)
+					return True
+
+		def __enter__(self):
+			return self
+	
+		def __exit__(self, exc_type, exc_value, exc_traceback):
 			...
 
-		def display(self,board:'Board',board_type):
-			...		
+		def translate_move(self,r,c,board:'Board'):
+			gc = self.config
 
-		@staticmethod
-		def translate_move(x,y,active_board):
+			def add_h_sep_rows():
+				return gc['v_spacing']+gc['h_separate']+gc['v_spacing']
+			def add_v_sep_cols():
+				return gc['h_spacing']+gc['v_separate']+gc['h_spacing']
+
+			# SET VERTICAL OFFSET:
+			v_start = 0						# empty row
+
+			# TEST - NEED TO SKIP IF REAL BOARD REVEALED:
+			v_start += 1					# board title
+			v_start += 1					# title rows
+			v_start+=add_h_sep_rows()		# separator
+			for _ in range(board.height):
+				v_start += 1				# value row
+				v_start+=add_h_sep_rows()
+			v_start += 1					# title rows
+			v_start += 1					# caption
+
+			v_start += 1					# empty row
+
+			# ACTIVE BOARD:
+			v_start += 1					# board title
+			v_start += 1					# title rows
+			v_start+=add_h_sep_rows()		# separator
+			v_start += 1					# value row
+
+			# SET HORIZONTAL OFFSET:
+			h_start = 0						# empty col
+
+			h_start += gc['v_separate']		# separator
+			h_start += gc['h_spacing']		# spacing
+			h_start += gc['axis_name_width']# row title
+			h_start += gc['h_spacing']+gc['value_width']-gc['axis_name_width']
+			h_start += gc['v_separate']		# separator
+			h_start += gc['h_spacing']		# spacing
+			h_start += 1					# value
+
+			r0 = r - v_start
+			c0 = c - h_start
+			# # # TEST
+			return (True,r0,c0)
+			# # # TEST
+
 			test = True
 			if test:
-				return (True,x,y)
+				return (True,r,c)
 			else:
-				return (False,x,y)
-
-		def get_move(self,active_board):
-			...
+				return (False,r,c)
 
 	def set_renderer(self,input_mode):
 		self.renderer = self.renderers[input_mode](self.config,self.values)
@@ -832,89 +1036,37 @@ def configure(ms:'Game',node=None):
 			configure(ms,node=node.parent)
 	
 	elif title=="DISPLAY SETTINGS":
-		with ms.graphics.renderer.config as rc:
+		with ms.graphics.renderer as gr:
 			if choice == 0:
 				configure(ms,node=node.parent)
 				# return to previous menu
 			elif choice == 1:
-				(value,) = ms.menus.ModifyHSeparate(rc['h_separate']).show()
-				rc['h_separate'] = value
+				(value,) = ms.menus.ModifyHSeparate(gr.config['h_separate']).show()
+				gr.config['h_separate'] = value
 				configure(ms,node)
 				# set horizontal separate on/off
 			elif choice == 2:
-				(value,) = ms.menus.ModifyHSpacing(rc['h_spacing']).show()
-				rc['h_spacing'] = value
+				(value,) = ms.menus.ModifyHSpacing(gr.config['h_spacing']).show()
+				gr.config['h_spacing'] = value
 				# set horizontal spacing on/off
 				configure(ms,node)
 			elif choice == 3:
-				(value,) = ms.menus.ModifyVSeparate(rc['v_separate']).show()
-				rc['v_separate'] = value
+				(value,) = ms.menus.ModifyVSeparate(gr.config['v_separate']).show()
+				gr.config['v_separate'] = value
 				# set vertical separate on/off
 				configure(ms,node)
 			elif choice == 4:
-				(value,) = ms.menus.ModifyVSpacing(rc['v_spacing']).show()
-				rc['v_spacing'] = value
+				(value,) = ms.menus.ModifyVSpacing(gr.config['v_spacing']).show()
+				gr.config['v_spacing'] = value
 				# set vertical spacing on/off
 				configure(ms,node)
 
 def play(ms:'Game'):
-	
-	def show_board_keyboard():
-		nonlocal ms
-
-		os.system('cls')
-		# # # TEST
-		Interface.SimpleMessage("\nINICIJALIZIRANA PLOCA").show()
-		image = ms.graphics.renderer.render(ms.board,'real')
-		Interface.SimpleMessage(image).show()
-		Interface.SimpleMessage("> OTVORENA ZA TESTIRANJE").show()
-		# # # TEST
-
-		Interface.SimpleMessage("\nAKTIVNA PLOCA").show()
-		image = ms.graphics.renderer.render(ms.board,'active')
-		Interface.SimpleMessage(image).show()
-		Interface.SimpleMessage(f"> PREOSTALO BOMBI: {ms.board.get_bombs_remaining()}").show()
-
-		lines = []
-		lines.append('\n'+ms.title)
-		lines.append(Interface.separator)
-		lines.append("> UPUTA: r = ## red, c = ## stupac, t = tip poteza")
-		lines.append("> UPUTA: tip poteza: 0 = iskopaj, 1 = (od)markiraj")
-		lines.append("> UPUTA: za izlaz iz igre umjesto poteza unesi [x]")
-		Interface.MultiMessage(lines).show()
-
-	def show_board_mouse():
-		nonlocal ms
-
-		def exit_on_x(key):
-			nonlocal txt
-			if key in ('x','X'):
-				raise uw.ExitMainLoop()
-			txt.set_text(repr(key))
-
-		image = ''
-		image += ("\nINICIJALIZIRANA PLOCA")
-		image += "\n"+ms.graphics.renderer.render(ms.board,'real')
-		image += ("\n> OTVORENA ZA TESTIRANJE")
-		image += "\n"
-		image += "\nAKTIVNA PLOCA"
-		image += "\n"+ms.graphics.render(ms.board,'active')
-		image += f"\n> PREOSTALO BOMBI: {ms.board.get_bombs_remaining()}"
-		image += '\n'+ms.title
-		image += '\n'+Interface.separator
-		image += "\n> UPUTA: polja se otkrivaju/označavaju klikovima miša"
-		image += "\n> UPUTA: tip poteza: LC = iskopaj, RC = (od)markiraj"
-		image += "\n> UPUTA: za izlaz iz igre umjesto poteza unesi [x]"
-
-		txt = uw.Text(image)
-		fill = uw.Filler(txt,'top')
-		loop = uw.MainLoop(fill,unhandled_input=exit_on_x)
-		loop.run()
 
 	new_move = True	
 	while new_move == True:
-		if ms.graphics.input_mode == "keyboard":
-			ms.graphics.renderer.display()
+		if ms.graphics.renderer.__class__ == ms.graphics.renderers[0]:
+			ms.graphics.renderer.display(ms)
 			(r,c,t) = ms.menus.GetMove(ms.board.width,ms.board.height).show()
 
 			if str(r).upper() == 'X':
@@ -925,21 +1077,73 @@ def play(ms:'Game'):
 				result = ms.board.evaluate_move(r,c,t)
 
 				if result == 'lost':
-					show_board_keyboard()
+					ms.graphics.renderer.display(ms)
 					Interface.SimpleMessage("\nBOOM!").show()
+					input()
 					new_move = False
 				elif result == 'win':
-					show_board_keyboard()
+					ms.graphics.renderer.display(ms)
 					Interface.SimpleMessage("\nPOBJEDA!").show()
 					new_move = False
+					input()
 
-		elif ms.graphics.input_mode == "mouse":
-			ms.graphics.renderer.display()
-			new_move=False
-			# # # TEST
-			# get mouse click through graphics
-			# if move == True ... evaluate r,c,t
-			# # # TEST
+		elif ms.graphics.renderer.__class__ == ms.graphics.renderers[1]:
+			with ms.graphics.renderer as gr:
+
+				(r,c,t) = (False,False,False)
+
+				def exit_to_menu(*args):
+					raise uw.ExitMainLoop()
+				
+				def translate(render,r_mouse,c_mouse,t_mouse):
+
+					# SHOW INFO AS A DIALOG BOX: "... has no attribute 'rows : FLOW > BOX?"
+					# nonlocal fill
+					# txt = uw.Text(f'r: {r_mouse} | c: {c_mouse} | t: {t_mouse}',align='center')
+					# done = uw.Button('Ok')
+					# uw.connect_signal(done,'click',exit_to_menu)
+					# done_map = uw.AttrMap(uw.Button('Ok'),None,focus_map='reversed')
+					# pile = uw.Pile([txt,done_map])
+					# filler = uw.Filler(pile,'top',height=('relative',30),min_height=3)
+					# padding = uw.Padding(filler,left=2,right=2)
+					# overlay = uw.Overlay(
+					# 	padding,uw.SolidFill('\N{MEDIUM SHADE}'),
+					# 	align='center',width=('relative',60),
+					# 	valign='middle',height=('relative',60),
+					# 	min_width=20,min_height=9)
+					# fill.original_widget = overlay
+					
+					nonlocal r,c,t
+
+					(test,r0,c0) = ms.graphics.renderer.translate_move(r_mouse,c_mouse,ms.board)
+					# TEST: SIMPLE PRINT
+					print(f'r: {r_mouse} | c: {c_mouse} | t: {t_mouse} || r0: {r0} | c0: {c0}')
+
+					# if test:
+					# 	(r,c,t) = (r_mouse,c_mouse,t_mouse)
+					# 	exit_to_menu()
+
+				render = gr.display(ms)
+				uw.connect_signal(render,'exit',exit_to_menu)
+				uw.connect_signal(render,'click',translate)
+				fill = uw.Filler(render,'top')
+
+				loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=True)
+				loop.run()
+
+				if new_move == True:
+					result = ms.board.evaluate_move(r,c,t)
+
+					if result == 'lost':
+						ms.graphics.renderer.display(ms)
+						Interface.SimpleMessage("\nBOOM!").show()
+						input()
+						new_move = False
+					elif result == 'win':
+						ms.graphics.renderer.display(ms)
+						Interface.SimpleMessage("\nPOBJEDA!").show()
+						new_move = False
+						input()
 
 def main():
 	ms = Game()
