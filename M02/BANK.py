@@ -288,7 +288,8 @@ class Bank():
 				c.address,
 				c.postal,
 				c.city,
-				f"{c.acc.acc_string} ({c.acc.acc_currency})"
+				f"{c.acc.acc_string} ({c.acc.acc_currency})",
+				c.acc.funds
 				)] for (k,c) in self.clients.items()]
 			# create data table
 			df = pd.DataFrame.from_records(data=input_data,columns=cols,index=rows)
@@ -353,7 +354,7 @@ class Bank():
 class Client():
 
 	# information gathered about client (for listing)
-	info = ["IME","OIB","ADRESA","PB","GRAD","RACUN"]
+	info = ["IME","OIB","ADRESA","PB","GRAD","RACUN","SALDO"]
 
 	def __init__(self,bank:'Bank',
 			  client_type=None,
@@ -399,13 +400,13 @@ class Client():
 		
 	def client_info(self):
 		info = ""
-		info += "Podaci o klijentu:"
+		info += "\nPodaci o klijentu:"
 		info += "\n"+Interface.separator
 		info += f"\nID klijenta: {self.client_id}"
 
 		# gather client data
 		data = [self.name,self.OIB,self.address,self.postal,self.city,
-		f"{self.acc.acc_string} ({self.acc.acc_currency})"]
+		f"{self.acc.acc_string} ({self.acc.acc_currency})",self.acc.funds]
 
 		for (t,d) in zip(Client.info,data):
 			info += f"\n{t}:\t{d}"
@@ -662,7 +663,7 @@ class Menus():
 def client_list(b:'Bank'):
 	os.system(Interface.cls_check())
 	# title
-	Interface.SimpleMessage("Popis klijenata:").show()
+	Interface.SimpleMessage("\nPopis klijenata:").show()
 	Interface.SimpleMessage(Interface.separator*2).show()
 	# generated dataframe
 	Interface.SimpleMessage(b.client_list()).show()
@@ -889,6 +890,8 @@ def main():
 			client_remove(b)
 		elif action == 5:
 			# generiraj OIB
+			Interface.SimpleMessage("\nGenerirani OIB").show()
+			Interface.SimpleMessage(Interface.separator).show()
 			Interface.SimpleMessage(OIB_checker.calc_OIB()).show()
 			# press any key
 			Interface.SimpleMessage("\nUnesi bilo koji znak za izlaz").show()
