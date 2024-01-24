@@ -1126,7 +1126,6 @@ def play(ms:'Game'):
 						raise uw.ExitMainLoop()
 
 				render = gr.display(ms)
-				uw.set_encoding("UTF-8")
 				uw.connect_signal(render,'exit',exit_to_menu)
 				uw.connect_signal(render,'click',translate)
 				fill = uw.Filler(render,'top')
@@ -1138,15 +1137,18 @@ def play(ms:'Game'):
 					result = ms.board.evaluate_move(r,c,t)
 
 					if result == 'lost':
-						ms.graphics.renderer.display(ms)
-						Interface.SimpleMessage("\nBOOM!").show()
-						input()
-						new_move = False
+						caption = uw.Text("\nBOOM!")
 					elif result == 'win':
-						ms.graphics.renderer.display(ms)
-						Interface.SimpleMessage("\nPOBJEDA!").show()
-						new_move = False
-						input()
+						caption = uw.Text("\nPOBJEDA!")
+
+					render = gr.display(ms)
+					uw.connect_signal(render,'exit',exit_to_menu)
+					pile = uw.Pile([render,caption])
+					fill = uw.Filler(pile,'top')
+					loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=False)
+					
+					loop.run()
+					new_move = False
 
 def main():
 	ms = Game()
