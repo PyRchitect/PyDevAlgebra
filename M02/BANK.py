@@ -206,6 +206,7 @@ class OIB_checker():
 
 class Bank():
 	TITLE = 'pyBank'
+	FOUNDED = 1996	# year founded, oldest possible account years
 
 	# only business acc implemented
 	BUSINESS = 'business'
@@ -499,15 +500,16 @@ class Menus():
 			opt.append('[2] - otvori')
 			opt.append('[3] - dodaj')
 			opt.append('[4] - ukloni')
-			opt.append('[ ]   HELPER:')
+			opt.append('[ ]   HELPERS:')
 			opt.append('[5] - calc OIB')
+			opt.append('[6] - random DB')
 			self.menu.options = opt
 
 			g = Interface.SimpleGetter()
-			g.choice_label = 'Odabir [0|...|5]'
+			g.choice_label = 'Odabir [0|...|6]'
 			g.choice_sep = ' '
 			g.choice_type = (int,)
-			g.choice_test = (lambda x: x in list(range(5+1)),)
+			g.choice_test = (lambda x: x in list(range(6+1)),)
 			g.choice_error = 'Pogresan unos!'
 			self.menu.getter = g
 		
@@ -570,12 +572,12 @@ class Menus():
 			seps = (' ',' ')
 			types = ((int,),(int,),)
 			tests = (
-				# year - up to 4 digits, less than today
-				(lambda x: (x>=0 and x<=dt.datetime.now().year),),
+				# year - up to 4 digits, since founding, less than today
+				(lambda x: (x>=Bank.FOUNDED and x<=dt.datetime.now().year),),
 				# month - between 1 and 12
 				(lambda x: (x>=1 and x<=12),),)			
 			errors = (
-				'Neispravno unesena godina!',
+				f'Neispravno unesena godina! ({Bank.FOUNDED}-{dt.datetime.now().year})',
 				'Neispravno unesen mjesec!')
 
 			self.gwh = Interface.MultiGetter(labels,seps,types,tests,errors)
@@ -688,7 +690,6 @@ def client_ops_transactions(c:'Client'):
 	Interface.SimpleMessage("\nUnesi bilo koji znak za izlaz").show()
 	input()
 
-
 def client_ops_deposit(b:'Bank',c:'Client'):
 	os.system(Interface.cls_check())
 	# title
@@ -776,8 +777,12 @@ def client_add(b:'Bank'):
 	else:
 		acc = None
 
-	b.client_add(Client(b,Bank.BUSINESS,None,name,OIB,address,postal,city,acc))
-	Interface.SimpleMessage("Klijent uspješno dodan.").show()
+	try:
+		b.client_add(Client(b,Bank.BUSINESS,None,name,OIB,address,postal,city,acc))
+	except:
+		Interface.SimpleMessage("Pogreška pri unosu u bazu.").show()
+	else:
+		Interface.SimpleMessage("Klijent uspješno dodan.").show()
 	# press any key
 	Interface.SimpleMessage("\nUnesi bilo koji znak za izlaz").show()
 	input()
@@ -795,6 +800,62 @@ def client_remove(b:'Bank'):
 		Interface.SimpleMessage("Nepostojeći ID klijenta!").show()
 	else:
 		Interface.SimpleMessage("Račun uspješno zatvoren.").show()
+	# press any key
+	Interface.SimpleMessage("\nUnesi bilo koji znak za izlaz").show()
+	input()
+
+def client_generate(b:'Bank',DB_data=None,DB_entries=12):
+
+	if DB_data:	# supports existent data
+		(fname,sname,street,pcity) = DB_data
+		if DB_entries and not len(fname) == DB_entries:
+			# if num and data provided check if they match
+			raise ValueError("Incorrect number of entries")
+	else:		# template entries
+		fname =	["Marko", "Ivo", "Jure", 
+			"Pero", "Frane", "Duje", 
+			"Ana", "Marina", "Ivana", 
+			"Karla", "Lucija", "Marija"]
+
+		sname =	["Marković", "Ivić", "Jurić",
+				"Perić", "Franić", "Dujić",
+				"Anić", "Marinović", "Ivanović",
+				"Karlović", "Lucić", "Marić"]
+
+		# (OIB)
+
+		street = ["Dubrovačka", "Splitska", "Šibenska",
+				"Zadarska", "Gospićka", "Riječka",
+				"Pulska", "Karlovačka", "Zagrebačka",
+				"Varaždinska", "Osiječka", "Vukovarska"]
+
+	# (kb)
+
+		pcity = ["20000 Dubrovnik", "21000 Split", "22000 Šibenik",
+				"23000 Zadar", "52000 Gospić", "53000 Rijeka",
+				"52000 Pazin", "47000 Karlovac", "10000 Zagreb",
+				"42000 Varaždin", "31000 Osijek", "32000 Vukovar"]
+
+	# (fn,sn) for acc
+	
+	try:
+		for _ in range(DB_entries):
+			cname = f"{rn.sample(fname,1)[0]} {rn.sample(sname,1)[0]}"
+			cOIB = int(OIB_checker.calc_OIB())
+			caddr = f"{rn.sample(street,1)[0]} {rn.randint(1,100)}"
+			(cpost,ccity) = rn.sample(pcity,1)[0].split(' ')
+			cpost = int(cpost)
+
+			fn = rn.randint(Bank.FOUNDED,dt.datetime.now().year)
+			sn = rn.randint(1,12+1)
+			cacc = (fn,sn)
+
+			# add client, generate ID, generate acc number using (fn,sn)
+			b.client_add(Client(b,Bank.BUSINESS,None,cname,cOIB,caddr,cpost,ccity,cacc))
+	except:
+		Interface.SimpleMessage("Pogreška pri generiranju baze.").show()
+	else:
+		Interface.SimpleMessage("Klijenti uspješno generirani.").show()
 	# press any key
 	Interface.SimpleMessage("\nUnesi bilo koji znak za izlaz").show()
 	input()
@@ -832,6 +893,9 @@ def main():
 			# press any key
 			Interface.SimpleMessage("\nUnesi bilo koji znak za izlaz").show()
 			input()
+		elif action == 6:
+			# generiraj random bazu
+			client_generate(b)
 
 if __name__ == '__main__':
 	main()
