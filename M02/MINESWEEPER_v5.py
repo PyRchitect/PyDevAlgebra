@@ -766,6 +766,7 @@ class Graphics():
 			# to be populated with board data
 			self.offset = (0,0)
 			self.jump_size = (1,1)
+			self.size = (1,1)
 
 		def render(self,board:'Board',board_type):
 			if board_type not in ['real','active']:
@@ -927,6 +928,10 @@ class Graphics():
 			...
 
 		def set_offset(self,board:'Board'):
+
+			# SET MAX JUMPS (BOARD SIZE):
+			self.size = (board.height,board.width)
+
 			gc = self.config
 
 			def add_h_sep_rows():
@@ -935,7 +940,7 @@ class Graphics():
 				return gc['h_spacing']+gc['v_separate']+gc['h_spacing']
 			
 			# SET JUMP SIZE:
-			self.jump_size = (add_v_sep_cols()+1,add_v_sep_cols()+1)
+			self.jump_size = (add_h_sep_rows()+1,add_v_sep_cols()+1)
 
 			# SET VERTICAL OFFSET:
 			r0 = 0						# empty row
@@ -972,11 +977,18 @@ class Graphics():
 			self.offset = (r0,c0)
 			
 		def translate_move(self,r,c):
-			(rt,rrem) = math.modf(r - self.offset[0])/self.jump_size[0]
-			(ct,crem) = math.modf(c - self.offset[1])/self.jump_size[1]
+			(rrem,rt) = math.modf((r - self.offset[0])/self.jump_size[0])
+			(crem,ct) = math.modf((c - self.offset[1])/self.jump_size[1])
+			# # # TEST
+			# print(f'r: {r} | c: {c} || rt: {rt} | ct: {ct}')
+			# print(f'ro: {self.offset[0]}, rj: {self.jump_size[0]}')
+			# print(f'co: {self.offset[1]}, cj: {self.jump_size[1]}')
+			# # # TEST
 
-			if not (rrem and crem):
-				return (True,rt,ct)
+			if not (rrem and crem) and (
+				rt>=0 and ct>=0) and (
+				rt<=self.size[0] and ct<=self.size[1]):
+					return (True,int(rt),int(ct))
 			else:
 				return (False,False,False)
 
@@ -1108,13 +1120,10 @@ def play(ms:'Game'):
 					nonlocal r,c,t
 
 					(test,rt,ct) = gr.translate_move(r_mouse,c_mouse)
-					# # # TEST
-					# print(f'r: {r_mouse} | c: {c_mouse} | t: {t_mouse} || r0: {r0} | c0: {c0}')
-					# # # TEST
 
 					if test:
 						(r,c,t) = (rt,ct,t_mouse)
-						exit_to_menu()
+						raise uw.ExitMainLoop()
 
 				render = gr.display(ms)
 				uw.set_encoding("UTF-8")
