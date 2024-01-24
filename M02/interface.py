@@ -8,6 +8,9 @@ class Interface():
 
 	separator = config['d_sep'] * config['m_sep']
 
+	def cls_check():
+		return 'cls' if os.name =='nt' else 'clear'
+
 	class SimpleMessage():
 		def __init__(self,
 			   text='',
@@ -151,7 +154,7 @@ class Interface():
 			return Interface.SimpleGetter.get_input(self.getter)
 		
 		def show(self):
-			os.system('cls')
+			os.system(Interface.cls_check())
 			self.show_text()
 			return self.show_input()
 
@@ -171,7 +174,7 @@ class Interface():
 			return self.data.show_input()
 		
 		def show(self):
-			os.system('cls')
+			os.system(Interface.cls_check())
 			self.show_parents()
 			self.show_text()
 			return self.show_input()	
