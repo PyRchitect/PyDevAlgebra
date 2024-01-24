@@ -1138,17 +1138,22 @@ def play(ms:'Game'):
 
 					if result == 'lost':
 						caption = uw.Text("\nBOOM!")
+						render = gr.display(ms)
+						uw.connect_signal(render,'exit',exit_to_menu)
+						pile = uw.Pile([render,caption])
+						fill = uw.Filler(pile,'top')
+						loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=False)
+						loop.run()
+						new_move = False
 					elif result == 'win':
 						caption = uw.Text("\nPOBJEDA!")
-
-					render = gr.display(ms)
-					uw.connect_signal(render,'exit',exit_to_menu)
-					pile = uw.Pile([render,caption])
-					fill = uw.Filler(pile,'top')
-					loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=False)
-					
-					loop.run()
-					new_move = False
+						render = gr.display(ms)
+						uw.connect_signal(render,'exit',exit_to_menu)
+						pile = uw.Pile([render,caption])
+						fill = uw.Filler(pile,'top')
+						loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=False)
+						loop.run()
+						new_move = False					
 
 def main():
 	ms = Game()
