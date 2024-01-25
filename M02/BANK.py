@@ -1,4 +1,5 @@
 # UPDATE 01: NEKE STVARI MALO LJEPŠE NAPISANE
+# UPDATE 02: UPDATE 01 JE NAPRAVIO PROBLEM PRI UNOSU, ISPRAVLJENO
 
 import os
 
@@ -533,16 +534,16 @@ class Menus():
 
 			labels = (
 				f"> Vlasnik:\t",
-				f"> Naziv:\t\t",
+				f"> Naziv:\t",
 				f"> OIB:\t\t",
 				f"> Adresa:\t",
 				f"> PBroj:\t",
 				f"> Grad:\t\t",
-				f"> Valuta:\t\t",
+				f"> Valuta:\t",
 				f"> Generacija računa [0=auto,1=manual]: ",)
 
 			# seps set to rare chr when ' ' is expected (prevents splitting)
-			seps = ('~','~',' ','~',' ','~',' ')
+			seps = ('~','~',' ','~',' ','~',' ',' ')
 
 			types = (
 				(str,),
@@ -556,9 +557,9 @@ class Menus():
 
 			tests = (
 				# director - first letters capital (+not empty+contain only letters), >1 word
-				(lambda x: len(x[0].split())>1, lambda x: all(w.istitle() for w in x.split()),),
-				# name - first letters capital (+not empty+contain only letters)
-				(lambda x: all(w.istitle() for w in x.split()),),
+				(lambda x: len(x.split())>1, lambda x: all(w.istitle() for w in x.split()),),
+				# name - no real check is possible except it has to have a name (len>0)
+				(lambda x: True if x else False,),
 				# OIB - 11 digits, test according to ISO
 				(lambda x: len(str(x))==11,OIB_checker.OIB_test_norma,),
 				# address - first letter first word capital (+not empty+contain only letters)
@@ -568,7 +569,7 @@ class Menus():
 				# city - first letter capital (+not empty+contain only letters)
 				(lambda x: x[0].istitle(),),
 				# currency - 3 letters, capital, in available currencies)
-				(lambda x: len(x[0]) == 3, lambda x: x[0].upper() in Account.currencies),
+				(lambda x: len(x) == 3, lambda x: x.upper() in Account.currencies,),
 				# gen - 0 = auto, 1 = manual
 				(lambda x: x in [0,1],),)
 			
@@ -788,7 +789,7 @@ def client_add(b:'Bank'):
 	Interface.SimpleMessage("Unos novog klijenta:").show()
 	Interface.SimpleMessage(Interface.separator).show()
 
-	((name,),(OIB,),(address,),(postal,),(city,),(cur),(gen,)) = b.menus.AddClient().show()
+	((name,),(company,),(OIB,),(address,),(postal,),(city,),(cur,),(gen,)) = b.menus.AddClient().show()
 
 	if gen:
 		Interface.SimpleMessage(Interface.separator).show()
@@ -800,7 +801,7 @@ def client_add(b:'Bank'):
 		acc = None
 
 	try:
-		b.client_add(Client(b,Bank.BUSINESS,None,name,OIB,address,postal,city,cur,acc))
+		b.client_add(Client(b,Bank.BUSINESS,None,name,company,OIB,address,postal,city,cur.upper(),acc))
 	except:
 		Interface.SimpleMessage("Pogreška pri unosu u bazu.").show()
 	else:
