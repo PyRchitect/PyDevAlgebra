@@ -2,6 +2,7 @@ import os
 import math
 import random as rn
 import itertools as it
+
 import urwid as uw
 
 import tree_node as tn
@@ -343,6 +344,19 @@ class Board():
 			for (rp,cp) in self.perimeter(r,c,type=8):
 				if self.active[r+rp][c+cp] == Board.values['hidden']:
 					self.flood_fill(r+rp,c+cp)
+	
+	def reveal_all(self):
+		for r in range(self.height):
+			for c in range(self.width):
+				if self.active[r][c] == Board.values['hidden']:
+					if self.real[r][c] == Board.values['zero']:
+						self.active[r][c] = Board.values['empty']
+					else:
+						self.active[r][c] = self.real[r][c]
+					
+	def reveal_bombs(self):
+		for (r,c) in self.bombs_pos_all:
+			self.active[r][c] = Board.values['bomb']
 
 class Menus():
 	class MainMenu():
@@ -842,11 +856,9 @@ class Graphics():
 				return (thst.format(value=r,width=gc['axis_name_width'])+sep)
 
 			def add_value_cells(r):
-				#palette = [("text", "light blue", 'default')]
 				cell_display = []
 				for c in range(board.width):
 					value = board_chosen[r][c]
-					#cell_display.append((self.palette[value],vhs+str(value)+vhs+sep))
 					cell_display.append((vhs))
 					cell_display.append((str(value),str(value)))
 					cell_display.append((vhs+sep))
@@ -941,7 +953,8 @@ class Graphics():
 			def add_h_sep_rows():
 				return gc['v_spacing']+gc['h_separate']+gc['v_spacing']
 			def add_v_sep_cols():
-				return gc['h_spacing']+gc['v_separate']+gc['h_spacing']
+				# ...+gc['v_separate']=1 ALWAYS+ ... because override = ' '
+				return gc['h_spacing']+1+gc['h_spacing']
 			
 			# SET JUMP SIZE:
 			self.jump_size = (add_h_sep_rows()+1,add_v_sep_cols()+1)
@@ -970,11 +983,13 @@ class Graphics():
 			# SET HORIZONTAL OFFSET:
 			c0 = 0						# empty col
 
-			c0 += gc['v_separate']		# separator
+			# ...+gc['v_separate']=1 ALWAYS ... because override = ' '
+			c0 += 1						# separator
 			c0 += gc['h_spacing']		# spacing
 			c0 += gc['axis_name_width']# row title
 			c0 += gc['h_spacing']+gc['value_width']-gc['axis_name_width']
-			c0 += gc['v_separate']		# separator
+			# ...+gc['v_separate']=1 ALWAYS ... because override = ' '
+			c0 += 1						# separator
 			c0 += gc['h_spacing']		# spacing
 			c0 += 1						# value
 
@@ -1119,13 +1134,18 @@ def play(ms:'Game'):
 
 				if test:
 					result = ms.board.evaluate_move(rt,ct,t_mouse)
-					loop.screen.clear()		# causes visible refresh
-					render.set_text(gr.display(ms))
 
 					if result == 'lost':
+						ms.board.reveal_bombs()
 						caption.set_text("\nBOOM!")
+						uw.disconnect_signal(render,'click',translate)
 					elif result == 'win':
+						ms.board.reveal_all()
 						caption.set_text("\nPOBJEDA!")
+						uw.disconnect_signal(render,'click',translate)
+
+					loop.screen.clear()		# causes visible refresh
+					render.set_text(gr.display(ms))
 
 			render = gr.MSEdit(gr.display(ms))
 			uw.connect_signal(render,'exit',gr.MSEdit.exit_to_menu)
