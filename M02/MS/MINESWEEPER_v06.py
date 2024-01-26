@@ -899,15 +899,11 @@ class Graphics():
 			image.append(("\n> UPUTA: tip poteza: LC = iskopaj, RC = (od)markiraj"))
 			image.append(("\n> UPUTA: za izlaz iz igre umjesto poteza unesi [x]\n"))			
 
-			# return self.MSEdit(image)
-			return image
+			return self.MSEdit(image)
 		
-		class MSEdit(uw.Text):
+		class MSEdit(uw.Edit):
 			_selectable = True
 			signals = ['exit','click']
-
-			def exit_to_menu(*args):
-				raise uw.ExitMainLoop()
 
 			def keypress(self,size,key):
 				if key == "x":
@@ -983,10 +979,15 @@ class Graphics():
 		def translate_move(self,r,c):
 			(rrem,rt) = math.modf((r - self.offset[0])/self.jump_size[0])
 			(crem,ct) = math.modf((c - self.offset[1])/self.jump_size[1])
+			# # # TEST
+			# print(f'r: {r} | c: {c} || rt: {rt} | ct: {ct}')
+			# print(f'ro: {self.offset[0]}, rj: {self.jump_size[0]}')
+			# print(f'co: {self.offset[1]}, cj: {self.jump_size[1]}')
+			# # # TEST
 
 			if not (rrem and crem) and (
 				rt>=0 and ct>=0) and (
-				rt<self.size[0] and ct<self.size[1]):
+				rt<=self.size[0] and ct<=self.size[1]):
 					return (True,int(rt),int(ct))
 			else:
 				return (False,False,False)
@@ -994,9 +995,7 @@ class Graphics():
 	def set_renderer(self,input_mode):
 		self.renderer = self.renderers[input_mode](self.config,self.values)
 	
-	KEYS = 0
-	MOUSE = 1
-	renderers = {KEYS: KeyboardMode, MOUSE: MouseMode}
+	renderers = {0: KeyboardMode, 1: MouseMode}
 
 class Game():
 	title = "MINESWEEPER"
@@ -1083,61 +1082,78 @@ def configure(ms:'Game',node=None):
 
 def play(ms:'Game'):
 
-	with ms.graphics.renderer as gr:
-		if gr.__class__ == ms.graphics.renderers[ms.graphics.KEYS]:
-			new_move = True	
-			while new_move == True:
-				gr.display(ms)
-				(r,c,t) = ms.menus.GetMove(ms.board.width,ms.board.height).show()
+	new_move = True	
+	while new_move == True:
+		if ms.graphics.renderer.__class__ == ms.graphics.renderers[0]:
+			ms.graphics.renderer.display(ms)
+			(r,c,t) = ms.menus.GetMove(ms.board.width,ms.board.height).show()
 
-				if str(r).upper() == 'X':
-					new_move=False
-					break
+			if str(r).upper() == 'X':
+				new_move=False
+				break
+
+			if new_move == True:
+				result = ms.board.evaluate_move(r,c,t)
+
+				if result == 'lost':
+					ms.graphics.renderer.display(ms)
+					Interface.SimpleMessage("\nBOOM!").show()
+					input()
+					new_move = False
+				elif result == 'win':
+					ms.graphics.renderer.display(ms)
+					Interface.SimpleMessage("\nPOBJEDA!").show()
+					new_move = False
+					input()
+
+		elif ms.graphics.renderer.__class__ == ms.graphics.renderers[1]:
+			with ms.graphics.renderer as gr:
+				gr.set_offset(ms.board)
+				(r,c,t) = (False,False,False)
+
+				def exit_to_menu(*args):
+					nonlocal new_move
+					new_move = False
+					raise uw.ExitMainLoop()
+				
+				def translate(render,r_mouse,c_mouse,t_mouse):
+					nonlocal r,c,t
+
+					(test,rt,ct) = gr.translate_move(r_mouse,c_mouse)
+
+					if test:
+						(r,c,t) = (rt,ct,t_mouse)
+						raise uw.ExitMainLoop()
+
+				render = gr.display(ms)
+				uw.connect_signal(render,'exit',exit_to_menu)
+				uw.connect_signal(render,'click',translate)
+				fill = uw.Filler(render,'top')
+
+				loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=True)
+				loop.run()
 
 				if new_move == True:
 					result = ms.board.evaluate_move(r,c,t)
 
 					if result == 'lost':
-						gr.display(ms)
-						Interface.SimpleMessage("\nBOOM!").show()
-						input()
+						caption = uw.Text("\nBOOM!")
+						render = gr.display(ms)
+						uw.connect_signal(render,'exit',exit_to_menu)
+						pile = uw.Pile([render,caption])
+						fill = uw.Filler(pile,'top')
+						loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=False)
+						loop.run()
 						new_move = False
 					elif result == 'win':
-						gr.display(ms)
-						Interface.SimpleMessage("\nPOBJEDA!").show()
-						new_move = False
-						input()
-
-		elif gr.__class__ == ms.graphics.renderers[ms.graphics.MOUSE]:
-			gr.set_offset(ms.board)
-			
-			def translate(widget,r_mouse,c_mouse,t_mouse):
-				nonlocal render
-				nonlocal caption
-
-				(test,rt,ct) = gr.translate_move(r_mouse,c_mouse)
-
-				if test:
-					result = ms.board.evaluate_move(rt,ct,t_mouse)
-					loop.screen.clear()		# causes visible refresh
-					render.set_text(gr.display(ms))
-
-					if result == 'lost':
-						caption.set_text("\nBOOM!")
-					elif result == 'win':
-						caption.set_text("\nPOBJEDA!")
-
-			render = gr.MSEdit(gr.display(ms))
-			uw.connect_signal(render,'exit',gr.MSEdit.exit_to_menu)
-			uw.connect_signal(render,'click',translate)
-
-			caption = uw.Text("\nPLAY!")
-
-			pile = uw.Pile([render,caption])
-			fill = uw.Filler(pile,'top')
-
-			loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=True)
-			loop.run()					
+						caption = uw.Text("\nPOBJEDA!")
+						render = gr.display(ms)
+						uw.connect_signal(render,'exit',exit_to_menu)
+						pile = uw.Pile([render,caption])
+						fill = uw.Filler(pile,'top')
+						loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=False)
+						loop.run()
+						new_move = False					
 
 def main():
 	ms = Game()
