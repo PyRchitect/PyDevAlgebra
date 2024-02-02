@@ -1,0 +1,14 @@
+kreiranje racuna
+ukljucimo OIB u R1 (provjera,unos,izlist)
+klasa Proizvod (kategoriju - kruh, naziv - kukuruzni,  masa - 450 g, cijena - 0.78 EUR, itd. po zelji
+umjesto dict sa naziv:cijena, imamo listu sa popisom proizvoda (klasa Proizvod)
+klasa Kupac(ime/naziv, oib, adresa, rabat)
+stavke moraju imati kolicinu - sada je samo jedan komad, jedan kg, jedna litra, a treba unijeti kolicinu npr. 1.78 kg banana po jedinicnoj cijeni od 1.2 EUR/kg
+nacin placanja - gotovina, kartica
+oznaka operatera
+sustav menija: novi racun, prikaz svih racuna (lista br. racuna-iznos), pretrazivanje po kupcu, pretrazivanje po cijeni
+klasa Prodavac (firma)
+lista kategorija povlastenih PDV-a (10% mlijeko)
+generatori za br. racuna, br. narudzbe
+
+https://www.youtube.com/watch?v=GiqqopBSoHw&t=276s
