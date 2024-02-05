@@ -2,8 +2,6 @@
 # https://learn.microsoft.com/en-us/sql/integration-services/import-export-data/get-started-with-this-simple-example-of-the-import-and-export-wizard?view=sql-server-ver16
 
 import random as rn
-import math
-
 import itertools as it
 import urwid as uw
 
@@ -224,9 +222,12 @@ class UPCA12():
 		loop = uw.MainLoop(fill,palette=UPCA12.palette)
 		loop.run()
 
-def test():
-	#bc = UPCA12([0,4,2,1,0,0,0,0,5,2,6,4])
-	bc = UPCA12()
-	bc.show_barcode()
 
-test()
+if __name__ == '__main__':
+
+	def test():
+		#bc = UPCA12([0,4,2,1,0,0,0,0,5,2,6,4])
+		bc = UPCA12()
+		bc.show_barcode()
+
+	test()
