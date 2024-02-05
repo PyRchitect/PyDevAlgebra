@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 import pandas as pd
 
+
 driver='ODBC Driver 17 for SQL Server'
 server='Marin-PC'
 database='GST'
