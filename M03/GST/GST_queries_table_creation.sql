@@ -22,45 +22,45 @@ CREATE TABLE [dbo].[CUSTOMERS] (
 
 DROP TABLE [dbo].[FTL]
 CREATE TABLE [dbo].[FTL] (
-    [FSMA FTL]                    NVARCHAR (255) NOT NULL,
-    [PLU]                         INT            NOT NULL,
-    [CATEGORY]                    NVARCHAR (255) NOT NULL,
-    [COMMODITY]                   NVARCHAR (255) NOT NULL,
-    [VARIETY]                     NVARCHAR (255) NULL,
-    [SIZE]                        NVARCHAR (255) NULL,
-    [MEASUREMENTS: NORTH AMERICA] NVARCHAR (255) NULL,
-    [MEASUREMENTS: REST OF WORLD] NVARCHAR (255) NULL,
-    [RESTRICTIONS / NOTES]        NVARCHAR (255) NULL,
-    [BOTANICAL NAME]              NVARCHAR (255) NULL,
-    [AKA]                         NVARCHAR (255) NULL,
-    [NOTES]                       NVARCHAR (255) NULL,
-    [REVISION DATE]               NVARCHAR (255) NULL,
-    [DATE ADDED]                  NVARCHAR (255) NULL,
-    [GPC]                         NVARCHAR (255) NULL,
-    [IMAGE]                       NVARCHAR (255) NULL,
-    [IMAGE_SOURCE]                NVARCHAR (255) NULL,
+    [FSMA FTL]                    VARCHAR (10)  NOT NULL,
+    [PLU]                         INT           NOT NULL,
+    [CATEGORY]                    VARCHAR (50)  NOT NULL,
+    [COMMODITY]                   VARCHAR (50)  NOT NULL,
+    [VARIETY]                     VARCHAR (MAX) NULL,
+    [SIZE]                        VARCHAR (50)  NULL,
+    [MEASUREMENTS: NORTH AMERICA] VARCHAR (200) NULL,
+    [MEASUREMENTS: REST OF WORLD] VARCHAR (100) NULL,
+    [RESTRICTIONS / NOTES]        VARCHAR (250) NULL,
+    [BOTANICAL NAME]              VARCHAR (100) NULL,
+    [AKA]                         VARCHAR (MAX) NULL,
+    [NOTES]                       VARCHAR (MAX) NULL,
+    [REVISION DATE]               VARCHAR (50)  NULL,
+    [DATE ADDED]                  VARCHAR (50)  NULL,
+    [GPC]                         VARCHAR (20)  NULL,
+    [IMAGE]                       VARCHAR (MAX) NULL,
+    [IMAGE_SOURCE]                VARCHAR (MAX) NULL,
     CONSTRAINT [PK_FTL] PRIMARY KEY CLUSTERED ([PLU] ASC)
 );
 
 DROP TABLE [dbo].[NONFTL]
 CREATE TABLE [dbo].[NONFTL] (
-    [FSMA FTL]                    NVARCHAR (255) NOT NULL,
-    [PLU]                         INT            NOT NULL,
-    [CATEGORY]                    NVARCHAR (255) NOT NULL,
-    [COMMODITY]                   NVARCHAR (255) NOT NULL,
-    [VARIETY]                     NVARCHAR (255) NULL,
-    [SIZE]                        NVARCHAR (255) NULL,
-    [MEASUREMENTS: NORTH AMERICA] NVARCHAR (255) NULL,
-    [MEASUREMENTS: REST OF WORLD] NVARCHAR (255) NULL,
-    [RESTRICTIONS / NOTES]        NVARCHAR (255) NULL,
-    [BOTANICAL NAME]              NVARCHAR (255) NULL,
-    [AKA]                         NVARCHAR (255) NULL,
-    [NOTES]                       NVARCHAR (255) NULL,
-    [REVISION DATE]               NVARCHAR (255) NULL,
-    [DATE ADDED]                  NVARCHAR (255) NULL,
-    [GPC]                         NVARCHAR (255) NULL,
-    [IMAGE]                       NVARCHAR (255) NULL,
-    [IMAGE_SOURCE]                NVARCHAR (255) NULL,
+    [FSMA FTL]                    VARCHAR (10)  NOT NULL,
+    [PLU]                         INT           NOT NULL,
+    [CATEGORY]                    VARCHAR (50)  NOT NULL,
+    [COMMODITY]                   VARCHAR (50)  NOT NULL,
+    [VARIETY]                     VARCHAR (MAX) NULL,
+    [SIZE]                        VARCHAR (50)  NULL,
+    [MEASUREMENTS: NORTH AMERICA] VARCHAR (200) NULL,
+    [MEASUREMENTS: REST OF WORLD] VARCHAR (100) NULL,
+    [RESTRICTIONS / NOTES]        VARCHAR (250) NULL,
+    [BOTANICAL NAME]              VARCHAR (100) NULL,
+    [AKA]                         VARCHAR (MAX) NULL,
+    [NOTES]                       VARCHAR (MAX) NULL,
+    [REVISION DATE]               VARCHAR (50)  NULL,
+    [DATE ADDED]                  VARCHAR (50)  NULL,
+    [GPC]                         VARCHAR (20)  NULL,
+    [IMAGE]                       VARCHAR (MAX) NULL,
+    [IMAGE_SOURCE]                VARCHAR (MAX) NULL,
     CONSTRAINT [PK_NONFTL] PRIMARY KEY CLUSTERED ([PLU] ASC)
 );
 
@@ -72,9 +72,9 @@ CREATE TABLE [dbo].[PRODUCTS] (
     [price]           DECIMAL (4, 2) NOT NULL,
     CONSTRAINT [PK_PRODUCTS] PRIMARY KEY CLUSTERED ([productId] ASC),
     CONSTRAINT [digitPLU] CHECK (NOT [PLU] like '%[^0-9]%'),
-    CONSTRAINT [lenPLU] CHECK (datalength([PLU])=(5)),
-    CONSTRAINT [FK_PRODUCTS_FTL] FOREIGN KEY ([PLU]) REFERENCES [dbo].[FTL] ([PLU]),
-    CONSTRAINT [FK_PRODUCTS_NONFTL] FOREIGN KEY ([PLU]) REFERENCES [dbo].[NONFTL] ([PLU]),
+    CONSTRAINT [lenPLUmax] CHECK (datalength([PLU])<(6)),
+    CONSTRAINT [lenPLUmin] CHECK (datalength([PLU])>(3)),
+    CONSTRAINT [FK_PRODUCTS_FTL] FOREIGN KEY ([PLU]) REFERENCES [dbo].[FTL_JOINED] ([PLU]),
     CONSTRAINT [FK_PRODUCTS_VENDORS] FOREIGN KEY ([productVendorId]) REFERENCES [dbo].[VENDORS] ([vendorId])
 );
 
@@ -96,12 +96,56 @@ CREATE TABLE [dbo].[VENDORS] (
 
 DROP TABLE [dbo].[INVENTORY]
 CREATE TABLE [dbo].[INVENTORY] (
-    [inventoryId] INT NOT NULL,
-    [productId]   INT NOT NULL,
-    [vendorId]    INT NOT NULL,
-    [qtyInStock]  INT NOT NULL,
-    [qtyReStock]  INT NOT NULL,
+    [inventoryId] INT      NOT NULL,
+    [productId]   INT      NOT NULL,
+    [qtyInStock]  INT      NOT NULL,
+    [qtyReStock]  INT      NOT NULL,
+    [dateAdded]   DATETIME NOT NULL,
     CONSTRAINT [PK_INVENTORY] PRIMARY KEY CLUSTERED ([inventoryId] ASC),
-    CONSTRAINT [FK_INVENTORY_FTL] FOREIGN KEY ([productId]) REFERENCES [dbo].[PRODUCTS] ([productId]),
-    CONSTRAINT [FK_INVENTORY_VENDORS] FOREIGN KEY ([vendorId]) REFERENCES [dbo].[VENDORS] ([vendorId])
+    CONSTRAINT [FK_INVENTORY_FTL] FOREIGN KEY ([productId]) REFERENCES [dbo].[PRODUCTS] ([productId])
+);
+
+
+DROP TABLE [dbo].[FTL_JOINED]
+CREATE TABLE [dbo].[FTL_JOINED] (
+    [FSMA FTL]                    VARCHAR (10)  NOT NULL,
+    [PLU]                         INT           NOT NULL,
+    [CATEGORY]                    VARCHAR (50)  NOT NULL,
+    [COMMODITY]                   VARCHAR (50)  NOT NULL,
+    [VARIETY]                     VARCHAR (MAX) NULL,
+    [SIZE]                        VARCHAR (50)  NULL,
+    [MEASUREMENTS: NORTH AMERICA] VARCHAR (200) NULL,
+    [MEASUREMENTS: REST OF WORLD] VARCHAR (100) NULL,
+    [RESTRICTIONS / NOTES]        VARCHAR (250) NULL,
+    [BOTANICAL NAME]              VARCHAR (100) NULL,
+    [AKA]                         VARCHAR (MAX) NULL,
+    [NOTES]                       VARCHAR (MAX) NULL,
+    [REVISION DATE]               VARCHAR (50)  NULL,
+    [DATE ADDED]                  VARCHAR (50)  NULL,
+    [GPC]                         VARCHAR (20)  NULL,
+    [IMAGE]                       VARCHAR (MAX) NULL,
+    [IMAGE_SOURCE]                VARCHAR (MAX) NULL,
+    CONSTRAINT [PK_FTL_JOINED] PRIMARY KEY CLUSTERED ([PLU] ASC)
+);
+
+CREATE TABLE [dbo].[ORDERS_VENDORS] (
+    [orderId]    INT IDENTITY (1, 1) NOT NULL,
+    [vendorId]   INT NOT NULL,
+    [productId]  INT NOT NULL,
+    [productQty] INT NOT NULL,
+    [totalPrice] AS  ([dbo].[calcTotalPrice]([productId],[productQty])),
+    CONSTRAINT [PK_ORDERS_VENDORS] PRIMARY KEY CLUSTERED ([orderId] ASC),
+    CONSTRAINT [FK_ORDERS_VENDORS_PRODUCTS] FOREIGN KEY ([productId]) REFERENCES [dbo].[PRODUCTS] ([productId]),
+    CONSTRAINT [FK_ORDERS_VENDORS_VENDORS] FOREIGN KEY ([vendorId]) REFERENCES [dbo].[VENDORS] ([vendorId])
+);
+
+CREATE TABLE [dbo].[ORDERS_CUSTOMERS] (
+    [orderId]    INT IDENTITY (1, 1) NOT NULL,
+    [customerId] INT NOT NULL,
+    [productId]  INT NOT NULL,
+    [productQty] INT NOT NULL,
+    [totalPrice] AS  ([dbo].[calcTotalPrice]([productId],[productQty])),
+    CONSTRAINT [PK_ORDERS] PRIMARY KEY CLUSTERED ([orderId] ASC),
+    CONSTRAINT [FK_ORDERS_CUSTOMERS_CUSTOMERS] FOREIGN KEY ([customerId]) REFERENCES [dbo].[CUSTOMERS] ([customerId]),
+    CONSTRAINT [FK_ORDERS_CUSTOMERS_PRODUCTS] FOREIGN KEY ([productId]) REFERENCES [dbo].[PRODUCTS] ([productId])
 );

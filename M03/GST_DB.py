@@ -76,25 +76,24 @@ def backup():
 if __name__ == '__main__':
 	db = DBMC()
 
-	def test_select():
-		# query = 'SELECT TOP (10) [PLU],[CATEGORY],[COMMODITY],[VARIETY],[SIZE] FROM NONFTL ORDER BY [PLU]'
-		query = 'SELECT * FROM CUSTOMERS'
-		db.process_query(query)
-
 	def test_create():
-		name = 'CUSTOMERS'
+		name = 'TEST'
 		data = (
-			sa.Column('id',sa.Integer,primary_key=True),
-			sa.Column('firstName',sa.String),
-			sa.Column('lastName',sa.String))	
+			sa.Column('testId',sa.Integer,primary_key=True),
+			sa.Column('testVar1',sa.String),
+			sa.Column('testVar2',sa.String))	
 		db.create_table(name,*data)
 
 	def test_insert():
 		data = []
-		data.append({'firstName':'Bruna','lastName':'Pirsic'})
-		db.insert_into_table('CUSTOMERS',data)
+		data.append({'testVar1':'testVal1','testVar2':'testVal2'})
+		db.insert_into_table('TEST',data)
+
+	def test_select():
+		query = 'SELECT * FROM TEST'
+		db.process_query(query)
 	
-	# test_create()
+	test_create()
 	test_insert()
 	test_select()
 
