@@ -32,6 +32,18 @@ CREATE TABLE [dbo].[FTL] (
     CONSTRAINT [PK_FTL] PRIMARY KEY CLUSTERED ([PLU] ASC)
 );
 
+CREATE TABLE [dbo].[INVENTORY] (
+    [inventoryId] INT            NOT NULL,
+    [itemNum]     INT            NOT NULL,
+    [vendorId]    INT            NOT NULL,
+    [price]       DECIMAL (4, 2) NOT NULL,
+    [qtyInStock]  INT            NOT NULL,
+    [qtyReStock]  INT            NOT NULL,
+    CONSTRAINT [PK_INVENTORY] PRIMARY KEY CLUSTERED ([inventoryId] ASC),
+    CONSTRAINT [FK_INVENTORY_FTL] FOREIGN KEY ([itemNum]) REFERENCES [dbo].[PRODUCTS] ([itemNum]),
+    CONSTRAINT [FK_INVENTORY_VENDORS] FOREIGN KEY ([vendorId]) REFERENCES [dbo].[VENDORS] ([vendorId])
+);
+
 CREATE TABLE [dbo].[NONFTL] (
     [FSMA FTL]                    NVARCHAR (255) NOT NULL,
     [PLU]                         INT            NOT NULL,
@@ -53,6 +65,16 @@ CREATE TABLE [dbo].[NONFTL] (
     CONSTRAINT [PK_NONFTL] PRIMARY KEY CLUSTERED ([PLU] ASC)
 );
 
+CREATE TABLE [dbo].[PRODUCTS] (
+    [itemNum] INT NOT NULL,
+    [PLU]     INT NOT NULL,
+    CONSTRAINT [PK_PRODUCTS] PRIMARY KEY CLUSTERED ([itemNum] ASC),
+    CONSTRAINT [digitPLU] CHECK (NOT [PLU] like '%[^0-9]%'),
+    CONSTRAINT [lenPLU] CHECK (datalength([PLU])=(5)),
+    CONSTRAINT [FK_PRODUCTS_FTL] FOREIGN KEY ([PLU]) REFERENCES [dbo].[FTL] ([PLU]),
+    CONSTRAINT [FK_PRODUCTS_NONFTL] FOREIGN KEY ([PLU]) REFERENCES [dbo].[NONFTL] ([PLU])
+);
+
 CREATE TABLE [dbo].[VENDORS] (
     [vendorId]         INT           IDENTITY (1, 1) NOT NULL,
     [vendorName]       VARCHAR (100) NOT NULL,
@@ -66,18 +88,4 @@ CREATE TABLE [dbo].[VENDORS] (
     CONSTRAINT [digitPC] CHECK (NOT [vendorPostalCode] like '%[^0-9]%'),
     CONSTRAINT [lenOIB] CHECK (datalength([vendorOIB])=(11)),
     CONSTRAINT [lenPC] CHECK (datalength([vendorPostalCode])=(5))
-);
-
-
-CREATE TABLE [dbo].[INVENTORY] (
-    [inventoryId] INT            NOT NULL,
-    [PLU]         INT            NOT NULL,
-    [vendorId]    INT            NOT NULL,
-    [price]       DECIMAL (4, 2) NOT NULL,
-    [qtyInStock]  INT            NOT NULL,
-    [qtyReStock]  INT            NOT NULL,
-    CONSTRAINT [PK_INVENTORY] PRIMARY KEY CLUSTERED ([inventoryId] ASC),
-    CONSTRAINT [FK_INVENTORY_FTL] FOREIGN KEY ([PLU]) REFERENCES [dbo].[FTL] ([PLU]),
-    CONSTRAINT [FK_INVENTORY_NONFTL] FOREIGN KEY ([PLU]) REFERENCES [dbo].[NONFTL] ([PLU]),
-    CONSTRAINT [FK_INVENTORY_VENDORS] FOREIGN KEY ([vendorId]) REFERENCES [dbo].[VENDORS] ([vendorId])
 );
