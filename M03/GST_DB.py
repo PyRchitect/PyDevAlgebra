@@ -7,7 +7,12 @@ class DBMC():
 
 	class constants(Enum):
 		DRIVER='ODBC Driver 17 for SQL Server'
-		SERVER='Marin-PC'
+		from platform import node
+
+		SERVER = node()
+		# SERVER='Marin-PC'
+		# SERVER='NEFORMALNI-23'
+
 		DATABASE='GST'
 		TRUSTED_CONNECTION='yes'
 	
@@ -42,9 +47,11 @@ class DBMC():
 		meta = sa.MetaData()
 		meta.reflect(bind=self.__engine,only=[table_name])		
 		table = meta.tables[table_name]
-		print(table.columns)
-		conn = self.__engine.connect()
-		conn.execute(table.insert(),data)
+		# conn = self.__engine.connect()
+		# conn.execute(table.insert(),data)
+		with self.__engine.connect() as conn:
+			result = conn.execute(table.insert(),data)
+			conn.commit()
 
 def backup():
 	driver='ODBC Driver 17 for SQL Server'
@@ -68,20 +75,27 @@ def backup():
 
 if __name__ == '__main__':
 	db = DBMC()
-	
-	# query = 'SELECT TOP (10) [PLU],[CATEGORY],[COMMODITY],[VARIETY],[SIZE] FROM NONFTL ORDER BY [PLU]'
-	# db.process_query(query)
 
-	# name = 'CUSTOMERS'
-	# data = (
-	# 	sa.Column('id',sa.Integer,primary_key=True),
-	# 	sa.Column('firstName',sa.String),
-	# 	sa.Column('lastName',sa.String))
-	
-	# db.create_table(name,*data)
+	def test_select():
+		# query = 'SELECT TOP (10) [PLU],[CATEGORY],[COMMODITY],[VARIETY],[SIZE] FROM NONFTL ORDER BY [PLU]'
+		query = 'SELECT * FROM CUSTOMERS'
+		db.process_query(query)
 
-	data = []
-	data.append({'firstName':'Marin','lastName':'Pirsic'})
-	db.insert_into_table('CUSTOMERS',data)
+	def test_create():
+		name = 'CUSTOMERS'
+		data = (
+			sa.Column('id',sa.Integer,primary_key=True),
+			sa.Column('firstName',sa.String),
+			sa.Column('lastName',sa.String))	
+		db.create_table(name,*data)
+
+	def test_insert():
+		data = []
+		data.append({'firstName':'Bruna','lastName':'Pirsic'})
+		db.insert_into_table('CUSTOMERS',data)
+	
+	# test_create()
+	test_insert()
+	test_select()
 
 	# backup()
