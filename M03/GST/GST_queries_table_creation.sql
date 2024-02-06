@@ -54,11 +54,20 @@ CREATE TABLE [dbo].[NONFTL] (
 );
 
 CREATE TABLE [dbo].[VENDORS] (
-    [vendorId] INT           NOT NULL,
-    [name]     VARCHAR (100) NOT NULL,
-    [address]  VARCHAR (100) NOT NULL,
-    CONSTRAINT [PK_VENDORS] PRIMARY KEY CLUSTERED ([vendorId] ASC)
+    [vendorId]         INT           IDENTITY (1, 1) NOT NULL,
+    [vendorName]       VARCHAR (100) NOT NULL,
+    [vendorAddress]    VARCHAR (100) NOT NULL,
+    [vendorPostalCode] VARCHAR (5)   NOT NULL,
+    [vendorCity]       VARCHAR (50)  NOT NULL,
+    [vendorOIB]        CHAR (11)     NOT NULL,
+    [vendorWebsite]    VARCHAR (100) NULL,
+    CONSTRAINT [PK_VENDORS] PRIMARY KEY CLUSTERED ([vendorId] ASC),
+    CONSTRAINT [digitOIB] CHECK (NOT [vendorOIB] like '%[^0-9]%'),
+    CONSTRAINT [digitPC] CHECK (NOT [vendorPostalCode] like '%[^0-9]%'),
+    CONSTRAINT [lenOIB] CHECK (datalength([vendorOIB])=(11)),
+    CONSTRAINT [lenPC] CHECK (datalength([vendorPostalCode])=(5))
 );
+
 
 CREATE TABLE [dbo].[INVENTORY] (
     [inventoryId] INT            NOT NULL,
