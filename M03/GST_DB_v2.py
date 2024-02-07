@@ -105,18 +105,20 @@ class PRODUCTS(DBTable):
 	def get_table_name(self): return 'PRODUCTS'
 	
 	def get_by_id(self,productId):
-		condition = f"productId='{productId}'"
-		return super().__select_from_table(condition)
+		condition = f"productId IN ({','.join(map(str,productId))})"
+		return self._DBTable__select_from_table(condition)
 	
-	def get_by_vendor(self,productVendorId):
-		condition = f"productVendorId='{productVendorId}'"
-		return super().__select_from_table(condition)
+	def get_by_vendor(self,productVendorId:'list'):
+		condition = f"productVendorId IN ({','.join(map(str,productVendorId))})"
+		return self._DBTable__select_from_table(condition)
 	
-	def get_by_id_and_vendor(self,productId,productVendorId):
-		condition = f"productId='{productId}' AND productVendorId='{productVendorId}'"
-		return super().__select_from_table(condition)
+	def get_by_id_and_vendor(self,productId:'list',productVendorId:'list'):
+		condition = f"productId IN ({','.join(map(str,productId))})"
+		condition+= " AND "
+		condition+= f"productVendorId IN ({','.join(map(str,productVendorId))})"
+		return self._DBTable__select_from_table(condition)
 	
-	def add_new_product(self,productId,productVendorId,price):
+	def add_new_product(self,productId:'list',productVendorId:'list',price:'float'):
 		productData = {'productId':productId,'productVendorId':productVendorId,'price':price}
 		super().__insert_into_table(self,productData)
 
@@ -164,6 +166,14 @@ if __name__ == '__main__':
 		df = db.tables["TEST"]._DBTable__select_from_table(condition)
 		print(df)
 	
-	test_create()
-	test_insert()
-	test_select()
+	# test_create()
+	# test_insert()
+	# test_select()
+		
+	def get_product():
+		df = db.tables['PRODUCTS'].get_by_id_and_vendor([1,2,3],[1])
+		print(df)
+	
+	get_product()
+		
+	
