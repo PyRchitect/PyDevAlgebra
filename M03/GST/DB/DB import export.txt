@@ -1,0 +1,31 @@
+https://stackoverflow.com/questions/1126571/import-export-database-with-sql-server-server-management-studio
+
+Exporting and Importing Database with MS SQL Server Management Studio
+
+1.Exporting Database from SQL Server
+
+On Object Explorer right click database you want to export listed in Databases node.
+
+Select Tasks then select Export Data-tier Application
+
+Click Export Settings
+
+Make sure Save to local disk is checked
+
+Browse the path and save the file as .bacpac file
+
+Click Next and Next to export
+
+2.Importing Database to SQL Server
+
+On Object Explorer right Databases node.
+
+Select Import Data-tier Application
+
+Click Import Settings
+
+Make sure Import from local disk is checked
+
+Browse the path and open the .bacpac file
+
+Click Next and Next to import
