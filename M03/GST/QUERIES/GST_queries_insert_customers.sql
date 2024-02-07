@@ -8,7 +8,7 @@ INSERT INTO CUSTOMERS(customerName,customerAddress,customerPostalCode,customerCi
 /*
 Takenoko
 https://www.takenoko.hr/
-Masarykova 22, 10000 Zagreb, Hrvatska
+Masarykova 22, 10000 Zagreb
 OIB: 79733218169
 
 ManO2

@@ -6,7 +6,7 @@ from enum import Enum
 
 class DBMC():
 
-	class constants(Enum):
+	class ConnConst(Enum):
 		DRIVER='ODBC Driver 17 for SQL Server'
 
 		from platform import node
@@ -36,10 +36,10 @@ class DBMC():
 	@staticmethod
 	def __create_conn_string():
 		cs = ''
-		cs+= f'DRIVER={DBMC.constants.DRIVER.value};'
-		cs+= f'SERVER={DBMC.constants.SERVER.value};'
-		cs+= f'DATABASE={DBMC.constants.DATABASE.value};'
-		cs+= f'TRUSTED_CONNECTION={DBMC.constants.TRUSTED_CONNECTION.value};'
+		cs+= f'DRIVER={DBMC.ConnConst.DRIVER.value};'
+		cs+= f'SERVER={DBMC.ConnConst.SERVER.value};'
+		cs+= f'DATABASE={DBMC.ConnConst.DATABASE.value};'
+		cs+= f'TRUSTED_CONNECTION={DBMC.ConnConst.TRUSTED_CONNECTION.value};'
 		return cs
 	
 	@staticmethod
@@ -84,7 +84,7 @@ class DBTable(ABC):
 	@abstractmethod
 	def get_table_name(self): return None
 
-	def __select_from_table(self,condition:'str'):
+	def select_from_table(self,condition:'str'):
 		query = 'SELECT * FROM ' + self.__table_name + ' WHERE ' + condition
 		df = pd.read_sql(query,self.__DBEngine)
 		return df
@@ -106,17 +106,17 @@ class PRODUCTS(DBTable):
 	
 	def get_by_id(self,productId):
 		condition = f"productId IN ({','.join(map(str,productId))})"
-		return self._DBTable__select_from_table(condition)
+		return self.select_from_table(condition)
 	
 	def get_by_vendor(self,productVendorId:'list'):
 		condition = f"productVendorId IN ({','.join(map(str,productVendorId))})"
-		return self._DBTable__select_from_table(condition)
+		return self.select_from_table(condition)
 	
 	def get_by_id_and_vendor(self,productId:'list',productVendorId:'list'):
 		condition = f"productId IN ({','.join(map(str,productId))})"
 		condition+= " AND "
 		condition+= f"productVendorId IN ({','.join(map(str,productVendorId))})"
-		return self._DBTable__select_from_table(condition)
+		return self.select_from_table(condition)
 	
 	def add_new_product(self,productId:'list',productVendorId:'list',price:'float'):
 		productData = {'productId':productId,'productVendorId':productVendorId,'price':price}
@@ -163,17 +163,16 @@ if __name__ == '__main__':
 
 	def test_select():
 		condition = "testVar1 = 'testVal11'"
-		df = db.tables["TEST"]._DBTable__select_from_table(condition)
+		df = db.tables["TEST"].select_from_table(condition)
 		print(df)
 	
-	# test_create()
-	# test_insert()
-	# test_select()
+	test_create()
+	test_insert()
+	test_select()
 		
 	def get_product():
 		df = db.tables['PRODUCTS'].get_by_id_and_vendor([1,2,3],[1])
 		print(df)
 	
-	get_product()
+	# get_product()
 		
-	
