@@ -1,0 +1,19 @@
+{
+    "id": 1,
+    "firstName": "Petar",
+    "lastName": "Peric",
+    "username": "pperic",
+    "email": "pperic@nekafirma.hr",
+    "address": {
+        "street": "Ilica 256",
+        "city": "Zagreb",
+        "zipcode": "10000"
+    },
+    "phone": "+38512345678",
+    "website": "www.nekafirma.hr",
+    "company": {
+        "name": "Neka Firma",
+        "catchPhrase": "Prava firma za prave pitone",
+        "bs": "Najbolja poslovna rjesenja"
+    }
+}
