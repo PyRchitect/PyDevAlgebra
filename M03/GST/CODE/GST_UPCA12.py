@@ -180,8 +180,6 @@ class UPCA12():
 				else:
 					#image.append(('light_line',' '))
 					image.append(('light_line',' '))
-			print(barcode)
-			print(positions)
 		
 		return image
 
@@ -222,12 +220,64 @@ class UPCA12():
 		loop = uw.MainLoop(fill,palette=UPCA12.palette)
 		loop.run()
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+		
+import urllib.request
+import urllib.parse
+import ssl
+
+import json
+
+import sys
+
+class UPCA12API():
+
+	def __init__(self,key):
+
+		self.__headers = {
+			'User-Agent': ' Mozilla/5.0 (Windows NT 6.1; WOW64;rv:12.0) Gecko/20100101 Firefox/12.0'
+		}
+
+		self.__settings = {
+			"url": f"https://api.upcdatabase.org/product/{''.join(map(str(key)))}",
+			"method": "GET",
+			"timeout": 0,
+			"headers": {
+				"Authorization": "Bearer THISISALIVEDEMOAPIKEY19651D54X47"
+				},
+			}
+		
+		self.UPCA_JSON = self.get_UPCA_JSON()
+
+	def get_UPCA_JSON(self):
+
+		try:
+			connection = urllib.request.Request(
+				self.__settings['url'],headers=self.__headers)
+			context = ssl._create_unverified_context()
+			with urllib.request.urlopen(connection,context=context) as response:
+				site = response.read().decode()
+		except ConnectionError as CE:
+			print(f"Connection Error! {CE}")
+		
+		return json.loads(site)
+	
+	def show_UPCA_JSON(self):
+		print(self.UPCA_JSON)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 if __name__ == '__main__':
 
 	def test():
 		#bc = UPCA12([0,4,2,1,0,0,0,0,5,2,6,4])
 		bc = UPCA12()
-		bc.show_barcode()
+		# vl = bc.get_value_list()
+		# vls = f"https://api.upcdatabase.org/product/{''.join(map(str(vl)))}",
+		bc_api = UPCA12API(bc.get_value_list())
+
+		bc_api.show_UPCA_JSON()
+
+		# bc.show_barcode()
 
 	test()
