@@ -13,7 +13,7 @@ OIB: 84586153335
 
 https://www.podravka.hr/
 Podravka d.d.
-Ante Starčevića 32, 48 000 Koprivnica
+Ante Starčevića 32, 48000 Koprivnica
 OIB: 18928523252
 
 https://www.farmeraj.hr/
@@ -28,7 +28,7 @@ OIB: 35345009214
 
 https://mojezrno.com/
 Animus Grupa d.o.o.
-Slavonska avenija 7, Zagreb
+Slavonska avenija 7, 10000 Zagreb
 OIB: 14553621354
 
 https://vocarna.hr/
@@ -38,21 +38,21 @@ OIB: 94068269434
 
 https://www.eko-veselic.com/
 OPG VESELIĆ - ORGANIC AGRICULTURE
-Novo Selo Palanječko, Vukovarska 24, 44 202 Topolovac
+Novo Selo Palanječko, Vukovarska 24, 44202 Topolovac
 OIB: 12214924795
 
 https://ter.hr/
 TER d.o.o.
-Medarska 69, 10 000 Zagreb
+Medarska 69, 10000 Zagreb
 OIB:35210351014
 
 http://www.zkm.hr/
 ZKM d.o.o.
-JADRANSKA CESTA 47 23000 Zadar
+Jadranska cesta 47, 23000 Zadar
 OIB: 57976587442
 
 https://plac.hr/
 LINI PLAC d.o.o. za trgovinu i usluge 
-Adresa sjedišta: Ferenščica I 102, Zagreb
+Ferenščica I 102, 10000 Zagreb
 OIB: 33815062701
 */

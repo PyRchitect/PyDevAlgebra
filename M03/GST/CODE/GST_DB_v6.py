@@ -92,6 +92,7 @@ class DBMC():
 		DBMC.session = DBSession()
 
 		self.tables = {
+			'FTL_JOINED':		FTL_JOINED(),
 			'PRODUCTS':			PRODUCTS(),
 			'INVENTORY':		INVENTORY(),
 			'VENDORS':			VENDORS(),
@@ -116,24 +117,19 @@ class DBMC():
 			'__tablename__':table_name,
 			'__mapper_args__' : {"concrete": True,}
 			}
-		# update dict with table columns received
 		classdict.update(data)
-		# create new subclass of DBTable:
 		TableClass = type(table_name,(DBTable,),classdict)
-		# create the table in db:
 		TableClass.__table__.create(bind=self.engine)
-		# add to tables dictionary:
 		self.tables[table_name] = TableClass()
 
 # https://www.tutorialspoint.com/sqlalchemy/sqlalchemy_orm_declaring_mapping.htm
 class DBTable(Base):
 
-	# to be changed on init:
+	# to be changed in inherited classes:
 	__tablename__ = ''
 	templateId = sa.Column(sa.Integer,primary_key=True)
 
 	def __init__(self):
-		DBTable.__tablename__ = self.__class__.__tablename__
 		self.DBEngine = DBMC.engine
 		if not self.DBEngine:
 			raise RuntimeError("DB not initialized!")
@@ -143,8 +139,8 @@ class DBTable(Base):
 		self.columns = self.get_columns()
 
 	def get_columns(self):
-		self.DBMeta.reflect(bind=self.DBEngine,only=[DBTable.__tablename__])
-		return self.DBMeta.tables[DBTable.__tablename__].columns.keys()	
+		self.DBMeta.reflect(bind=self.DBEngine,only=[self.__class__.__tablename__])
+		return self.DBMeta.tables[self.__class__.__tablename__].columns.keys()	
 
 	def check_columns(self,data):
 		for k in data:
@@ -153,7 +149,7 @@ class DBTable(Base):
 
 	def select_from_table(self,columns='*',lookup_data:'dict'={},sep='',raw:'bool'=False):
 		self.check_columns(columns) if columns!='*' else True
-		query_columns = ','.join(columns) + ' FROM ' + DBTable.__tablename__
+		query_columns = ','.join(columns) + ' FROM ' + self.__class__.__tablename__
 
 		if raw:
 			# get raw selection (returns tuples using DBAPI)
@@ -198,8 +194,8 @@ class DBTable(Base):
 		...
 	
 	def insert_into_table(self,data):
-		self.DBMeta.reflect(bind=self.DBEngine,only=[DBTable.__tablename__])
-		table = self.DBMeta.tables[DBTable.__tablename__]
+		self.DBMeta.reflect(bind=self.DBEngine,only=[self.__class__.__tablename__])
+		table = self.DBMeta.tables[self.__class__.__tablename__]
 		with self.DBEngine.connect() as conn:
 			conn.execute(table.insert(),data)
 			conn.commit()
@@ -210,35 +206,80 @@ class DBTable(Base):
 		
 		self.insert_into_table(data)
 
+class FTL_JOINED(DBTable):
+	__tablename__ = 'FTL_JOINED'
+	__mapper_args__ = {"concrete": True,}
+
+	fsmaFTL = sa.Column(sa.VARCHAR(10))
+	PLU = sa.Column(sa.INTEGER,primary_key=True)
+	category = sa.Column(sa.VARCHAR(50))
+	commodity = sa.Column(sa.VARCHAR(50))
+	variety = sa.Column(sa.VARCHAR())
+	size = sa.Column(sa.VARCHAR(50))
+	measurementsNA = sa.Column(sa.VARCHAR(200))
+	measurementsRoW = sa.Column(sa.VARCHAR(100))
+	restrictions = sa.Column(sa.VARCHAR(250))
+	botanicalName = sa.Column(sa.VARCHAR(100))
+	aka = sa.Column(sa.VARCHAR())
+	notes = sa.Column(sa.VARCHAR())
+	revDate = sa.Column(sa.VARCHAR(50))
+	dateAdded = sa.Column(sa.VARCHAR(50))
+	GPC = sa.Column(sa.VARCHAR(20))
+
 class PRODUCTS(DBTable):
 	__tablename__ = 'PRODUCTS'
 	__mapper_args__ = {"concrete": True,}
 
-	productId = sa.Column(sa.Integer,primary_key=True)
+	productId = sa.Column(sa.INTEGER,primary_key=True)
+	PLU = sa.Column(sa.INTEGER)
+	productVendorId = sa.Column(sa.INTEGER)
+	buyPrice = sa.Column(sa.FLOAT)
+	holdPrice = sa.Column(sa.FLOAT)
+	sellPrice = sa.Column(sa.FLOAT)
 
 class INVENTORY(DBTable):
 	__tablename__ = 'INVENTORY'
 	__mapper_args__ = {"concrete": True,}
 
-	inventoryId = sa.Column(sa.Integer,primary_key=True)
+	inventoryId = sa.Column(sa.INTEGER,primary_key=True)
+	productId = sa.Column(sa.INTEGER)
+	qtyInStock = sa.Column(sa.INTEGER)
+	qtyReStock = sa.Column(sa.INTEGER)
+	dateAdded = sa.Column(sa.DATE)
 
 class VENDORS(DBTable):
 	__tablename__ = 'VENDORS'
 	__mapper_args__ = {"concrete": True,}
 
-	vendorId = sa.Column(sa.Integer,primary_key=True)
+	vendorId = sa.Column(sa.INTEGER,primary_key=True)
+	vendorName = sa.Column(sa.VARCHAR(100))
+	vendorAddress = sa.Column(sa.VARCHAR(100))
+	vendorPostalCode = sa.Column(sa.CHAR(5))
+	vendorCity = sa.Column(sa.VARCHAR(50))
+	vendorOIB = sa.Column(sa.CHAR(11))
+	vendorWebsite = sa.Column(sa.VARCHAR(100))
 
 class ORDERS_VENDORS(DBTable):
 	__tablename__ = 'ORDERS_VENDORS'
 	__mapper_args__ = {"concrete": True,}
 
-	orderVendorId = sa.Column(sa.Integer,primary_key=True)
+	orderVendorId = sa.Column(sa.INTEGER,primary_key=True)
+	vendorId = sa.Column(sa.INTEGER)
+	productId = sa.Column(sa.INTEGER)
+	productQty = sa.Column(sa.INTEGER)
+	totalPrice = sa.Column(sa.FLOAT)
 
 class CUSTOMERS(DBTable):
 	__tablename__ = 'CUSTOMERS'
 	__mapper_args__ = {"concrete": True,}
 
-	customerId = sa.Column(sa.Integer,primary_key=True)
+	customerId = sa.Column(sa.INTEGER,primary_key=True)
+	customerName = sa.Column(sa.VARCHAR(100))
+	customerAddress = sa.Column(sa.VARCHAR(100))
+	customerPostalCode = sa.Column(sa.CHAR(5))
+	customerCity = sa.Column(sa.VARCHAR(50))
+	customerOIB = sa.Column(sa.VARCHAR(11))
+	customerWebsite = sa.Column(sa.VARCHAR(100))
 
 class ORDERS_CUSTOMERS(DBTable):
 	__tablename__ = 'ORDERS_CUSTOMERS'
@@ -246,10 +287,10 @@ class ORDERS_CUSTOMERS(DBTable):
 
 	orderId = sa.Column(sa.Integer,primary_key=True)
 
-	customerId = sa.Column(sa.Integer)
-	productId = sa.Column(sa.Integer)
-	productQty = sa.Column(sa.Integer)
-	totalPrice = sa.Column(sa.Float)
+	customerId = sa.Column(sa.INTEGER)
+	productId = sa.Column(sa.INTEGER)
+	productQty = sa.Column(sa.INTEGER)
+	totalPrice = sa.Column(sa.FLOAT)
 
 if __name__ == '__main__':
 	db = DBMC()
@@ -260,10 +301,6 @@ if __name__ == '__main__':
 			'testId':sa.Column(sa.Integer,primary_key=True),
 			'testVar1':sa.Column(sa.String),
 			'testVar2':sa.Column(sa.String)}
-		# data = {
-		# 	'testId':sa.Column('testId',sa.Integer,sa.Identity(),primary_key=True),
-		# 	'testVar1':sa.Column('testVar1',sa.String),
-		# 	'testVar2':sa.Column('testVar2',sa.String)}
 		db.create_new_table(name,data)
 
 	def test_insert():
@@ -297,7 +334,7 @@ if __name__ == '__main__':
 		print("\n> lookup (productId,productQty,totalPrice) by productID (5) and productQty (10) keys")
 		# print(db.tables["ORDERS_CUSTOMERS"].lookup_by_keys
 	
-	get_order_customer()
+	# get_order_customer()
 		
 	def add_order_customer():
 
@@ -319,3 +356,168 @@ if __name__ == '__main__':
 		print(db.tables['ORDERS_CUSTOMERS'].select_from_table())
 
 	# add_order_customer()
+
+	def list_db():	
+		
+		print("\n> select all")
+
+		print("FTL_JOINED")
+		print(db.tables['FTL_JOINED'].select_from_table())
+
+		print("PRODUCTS")
+		print(db.tables['PRODUCTS'].select_from_table())
+
+		print("INVENTORY")
+		print(db.tables['INVENTORY'].select_from_table())
+
+		print("VENDORS")
+		print(db.tables['ORDERS_VENDORS'].select_from_table())
+
+		print("ORDERS_VENDORS")
+		print(db.tables['ORDERS_VENDORS'].select_from_table())
+
+		print("CUSTOMERS")
+		print(db.tables['CUSTOMERS'].select_from_table())
+
+		print("ORDERS_CUSTOMERS")
+		print(db.tables['ORDERS_CUSTOMERS'].select_from_table())
+
+	# list_db()
+
+	def add_vendors():
+
+		print("\nVENDORS")
+		print(db.tables['VENDORS'].select_from_table())
+
+		data = []
+		# data.append({
+		# 	'vendorName':			'',
+		# 	'vendorAddress':		'',
+		# 	'vendorPostalCode':		'',
+		# 	'vendorCity':			'',
+		# 	'vendorOIB':			'',
+		# 	'vendorWebsite':		'',
+		# 	})
+		data.append({
+			'vendorName':			'Animus Grupa d.o.o.',
+			'vendorAddress':		'Slavonska avenija 7',
+			'vendorPostalCode':		'10000',
+			'vendorCity':			'Zagreb',
+			'vendorOIB':			'14553621354',
+			'vendorWebsite':		'https://mojezrno.com/',
+			})
+		data.append({
+			'vendorName':			'GEKOS NATURA d.o.o. za usluge',
+			'vendorAddress':		'Ulica Grada Mainza 23',
+			'vendorPostalCode':		'10000',
+			'vendorCity':			'Zagreb',
+			'vendorOIB':			'94068269434',
+			'vendorWebsite':		'https://vocarna.hr/',
+			})
+		data.append({
+			'vendorName':			'OPG VESELIĆ - ORGANIC AGRICULTURE',
+			'vendorAddress':		'Novo Selo Palanječko, Vukovarska 24',
+			'vendorPostalCode':		'44202',
+			'vendorCity':			'Topolovac',
+			'vendorOIB':			'12214924795',
+			'vendorWebsite':		'https://www.eko-veselic.com/',
+			})
+		data.append({
+			'vendorName':			'TER d.o.o.',
+			'vendorAddress':		'Medarska 69',
+			'vendorPostalCode':		'10000',
+			'vendorCity':			'Zagreb',
+			'vendorOIB':			'35210351014',
+			'vendorWebsite':		'https://ter.hr/',
+			})
+		data.append({
+			'vendorName':			'ZKM d.o.o.',
+			'vendorAddress':		'Jadranska cesta 47',
+			'vendorPostalCode':		'23000',
+			'vendorCity':			'Zadar',
+			'vendorOIB':			'57976587442',
+			'vendorWebsite':		'http://www.zkm.hr/',
+			})
+		data.append({
+			'vendorName':			'LINI PLAC d.o.o. za trgovinu i usluge ',
+			'vendorAddress':		'Ferenščica I 102',
+			'vendorPostalCode':		'10000',
+			'vendorCity':			'Zagreb',
+			'vendorOIB':			'33815062701',
+			'vendorWebsite':		'https://plac.hr/',
+			})
+		db.tables['VENDORS'].append_entries(data)
+
+		print("\nVENDORS")
+		print(db.tables['VENDORS'].select_from_table())
+
+	# add_vendors()
+		
+	def add_customer():
+
+		print("\nCUSTOMERS")
+		print(db.tables['CUSTOMERS'].select_from_table())
+
+		data = []
+		data.append({
+			'customerName':			'',
+			'customerAddress':		'',
+			'customerPostalCode':	'',
+			'customerCity':			'',
+			'customerOIB':			'',
+			'customerWebsite':		'',
+			})
+		data.append({
+			'customerName':			'Carpaccio',
+			'customerAddress':		'Teslina 14',
+			'customerPostalCode':	'10000',
+			'customerCity':			'Zagreb',
+			'customerOIB':			'83706912258',
+			'customerWebsite':		'https://ristorantecarpaccio.hr/',
+			})
+		data.append({
+			'customerName':			'Rougemarin',
+			'customerAddress':		'Frane Folnegovića 10',
+			'customerPostalCode':	'10000',
+			'customerCity':			'Zagreb',
+			'customerOIB':			'20822976890',
+			'customerWebsite':		'https://www.rougemarin.hr/',
+			})
+		data.append({
+			'customerName':			'Lari i Penati',
+			'customerAddress':		'Petrinjska 42a',
+			'customerPostalCode':	'10000',
+			'customerCity':			'Zagreb',
+			'customerOIB':			'88529228879',
+			'customerWebsite':		'http://www.laripenati.hr/',
+			})
+		data.append({
+			'customerName':			'Boban',
+			'customerAddress':		'Gajeva 9',
+			'customerPostalCode':	'10000',
+			'customerCity':			'Zagreb',
+			'customerOIB':			'53656152979',
+			'customerWebsite':		'http://www.boban.hr/',
+			})
+		data.append({
+			'customerName':			'BOTA-ŠARE d.o.o.',
+			'customerAddress':		'Ulica kralja Zvonimira 124',
+			'customerPostalCode':	'10000',
+			'customerCity':			'Zagreb',
+			'customerOIB':			'74950041813',
+			'customerWebsite':		'https://www.bota-sare.hr/',
+			})
+		data.append({
+			'customerName':			'IZAKAYA',
+			'customerAddress':		'Selska 90b',
+			'customerPostalCode':	'10000',
+			'customerCity':			'Zagreb',
+			'customerOIB':			'07919388411',
+			'customerWebsite':		'https://www.izakaya.hr/',
+			})
+		db.tables['CUSTOMERS'].append_entries(data)
+
+		print("\nCUSTOMERS")
+		print(db.tables['CUSTOMERS'].select_from_table())
+
+	add_customer()
