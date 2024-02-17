@@ -278,7 +278,7 @@ class CUSTOMERS(DBTable):
 	customerAddress = sa.Column(sa.VARCHAR(100))
 	customerPostalCode = sa.Column(sa.CHAR(5))
 	customerCity = sa.Column(sa.VARCHAR(50))
-	customerOIB = sa.Column(sa.VARCHAR(11))
+	customerOIB = sa.Column(sa.CHAR(11))
 	customerWebsite = sa.Column(sa.VARCHAR(100))
 
 class ORDERS_CUSTOMERS(DBTable):
@@ -398,58 +398,74 @@ if __name__ == '__main__':
 		# 	'vendorOIB':			'',
 		# 	'vendorWebsite':		'',
 		# 	})
-		data.append({
-			'vendorName':			'Animus Grupa d.o.o.',
-			'vendorAddress':		'Slavonska avenija 7',
-			'vendorPostalCode':		'10000',
-			'vendorCity':			'Zagreb',
-			'vendorOIB':			'14553621354',
-			'vendorWebsite':		'https://mojezrno.com/',
-			})
-		data.append({
-			'vendorName':			'GEKOS NATURA d.o.o. za usluge',
-			'vendorAddress':		'Ulica Grada Mainza 23',
-			'vendorPostalCode':		'10000',
-			'vendorCity':			'Zagreb',
-			'vendorOIB':			'94068269434',
-			'vendorWebsite':		'https://vocarna.hr/',
-			})
-		data.append({
-			'vendorName':			'OPG VESELIĆ - ORGANIC AGRICULTURE',
-			'vendorAddress':		'Novo Selo Palanječko, Vukovarska 24',
-			'vendorPostalCode':		'44202',
-			'vendorCity':			'Topolovac',
-			'vendorOIB':			'12214924795',
-			'vendorWebsite':		'https://www.eko-veselic.com/',
-			})
-		data.append({
-			'vendorName':			'TER d.o.o.',
-			'vendorAddress':		'Medarska 69',
-			'vendorPostalCode':		'10000',
-			'vendorCity':			'Zagreb',
-			'vendorOIB':			'35210351014',
-			'vendorWebsite':		'https://ter.hr/',
-			})
-		data.append({
-			'vendorName':			'ZKM d.o.o.',
-			'vendorAddress':		'Jadranska cesta 47',
-			'vendorPostalCode':		'23000',
-			'vendorCity':			'Zadar',
-			'vendorOIB':			'57976587442',
-			'vendorWebsite':		'http://www.zkm.hr/',
-			})
-		data.append({
-			'vendorName':			'LINI PLAC d.o.o. za trgovinu i usluge ',
-			'vendorAddress':		'Ferenščica I 102',
-			'vendorPostalCode':		'10000',
-			'vendorCity':			'Zagreb',
-			'vendorOIB':			'33815062701',
-			'vendorWebsite':		'https://plac.hr/',
-			})
-		db.tables['VENDORS'].append_entries(data)
+		# data.append({
+		# 	'vendorName':			'Biovega d.o.o.',
+		# 	'vendorAddress':		'Majstorska 1E',
+		# 	'vendorPostalCode':		'10000',
+		# 	'vendorCity':			'Zagreb',
+		# 	'vendorOIB':			'84586153335',
+		# 	'vendorWebsite':		'https://www.biobio.hr/',
+		# 	})
+		# data.append({
+		# 	'vendorName':			'Podravka d.d.',
+		# 	'vendorAddress':		'Ante Starčevića 32',
+		# 	'vendorPostalCode':		'48000',
+		# 	'vendorCity':			'Koprivnica',
+		# 	'vendorOIB':			'18928523252',
+		# 	'vendorWebsite':		'https://www.podravka.hr/',
+		# 	})
+		# data.append({
+		# 	'vendorName':			'Animus Grupa d.o.o.',
+		# 	'vendorAddress':		'Slavonska avenija 7',
+		# 	'vendorPostalCode':		'10000',
+		# 	'vendorCity':			'Zagreb',
+		# 	'vendorOIB':			'14553621354',
+		# 	'vendorWebsite':		'https://mojezrno.com/',
+		# 	})
+		# data.append({
+		# 	'vendorName':			'GEKOS NATURA d.o.o. za usluge',
+		# 	'vendorAddress':		'Ulica Grada Mainza 23',
+		# 	'vendorPostalCode':		'10000',
+		# 	'vendorCity':			'Zagreb',
+		# 	'vendorOIB':			'94068269434',
+		# 	'vendorWebsite':		'https://vocarna.hr/',
+		# 	})
+		# data.append({
+		# 	'vendorName':			'OPG VESELIĆ - ORGANIC AGRICULTURE',
+		# 	'vendorAddress':		'Novo Selo Palanječko, Vukovarska 24',
+		# 	'vendorPostalCode':		'44202',
+		# 	'vendorCity':			'Topolovac',
+		# 	'vendorOIB':			'12214924795',
+		# 	'vendorWebsite':		'https://www.eko-veselic.com/',
+		# 	})
+		# data.append({
+		# 	'vendorName':			'TER d.o.o.',
+		# 	'vendorAddress':		'Medarska 69',
+		# 	'vendorPostalCode':		'10000',
+		# 	'vendorCity':			'Zagreb',
+		# 	'vendorOIB':			'35210351014',
+		# 	'vendorWebsite':		'https://ter.hr/',
+		# 	})
+		# data.append({
+		# 	'vendorName':			'ZKM d.o.o.',
+		# 	'vendorAddress':		'Jadranska cesta 47',
+		# 	'vendorPostalCode':		'23000',
+		# 	'vendorCity':			'Zadar',
+		# 	'vendorOIB':			'57976587442',
+		# 	'vendorWebsite':		'http://www.zkm.hr/',
+		# 	})
+		# data.append({
+		# 	'vendorName':			'LINI PLAC d.o.o. za trgovinu i usluge ',
+		# 	'vendorAddress':		'Ferenščica I 102',
+		# 	'vendorPostalCode':		'10000',
+		# 	'vendorCity':			'Zagreb',
+		# 	'vendorOIB':			'33815062701',
+		# 	'vendorWebsite':		'https://plac.hr/',
+		# 	})
+		# db.tables['VENDORS'].append_entries(data)
 
-		print("\nVENDORS")
-		print(db.tables['VENDORS'].select_from_table())
+		# print("\nVENDORS")
+		# print(db.tables['VENDORS'].select_from_table())
 
 	# add_vendors()
 		
@@ -459,14 +475,14 @@ if __name__ == '__main__':
 		print(db.tables['CUSTOMERS'].select_from_table())
 
 		data = []
-		data.append({
-			'customerName':			'',
-			'customerAddress':		'',
-			'customerPostalCode':	'',
-			'customerCity':			'',
-			'customerOIB':			'',
-			'customerWebsite':		'',
-			})
+		# data.append({
+		# 	'customerName':			'',
+		# 	'customerAddress':		'',
+		# 	'customerPostalCode':	'',
+		# 	'customerCity':			'',
+		# 	'customerOIB':			'',
+		# 	'customerWebsite':		'',
+		# 	})
 		data.append({
 			'customerName':			'Carpaccio',
 			'customerAddress':		'Teslina 14',
@@ -520,4 +536,4 @@ if __name__ == '__main__':
 		print("\nCUSTOMERS")
 		print(db.tables['CUSTOMERS'].select_from_table())
 
-	add_customer()
+	# add_customer()
