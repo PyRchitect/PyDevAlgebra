@@ -82,7 +82,7 @@ def tkinter_basic_04():
 
 	root.mainloop()
 
-# tkinter_basic_04()
+tkinter_basic_04()
 
 def tkinter_basic_05():
 
@@ -207,4 +207,91 @@ def tkinter_basic_08():
 
 	root.mainloop()
 
-tkinter_basic_08()
+# tkinter_basic_08()
+
+def tkinter_basic_09():
+
+	def zbroji():
+		nonlocal ispis_rezultat
+		ispis_rezultat.delete(0,tk.END)
+		prvi_broj = int(unos_prvi_broj.get())
+		drugi_broj = int(unos_drugi_broj.get())
+		rezultat = prvi_broj+drugi_broj
+		print(f"Zbroj {rezultat}")
+		ispis_rezultat.insert(tk.END,str(rezultat))
+	
+	def handle_btn_oduzmi(event):
+		nonlocal ispis_rezultat
+		ispis_rezultat.delete(0,tk.END)
+		print(str(event))
+		prvi_broj = int(unos_prvi_broj.get())
+		drugi_broj = int(unos_drugi_broj.get())
+		rezultat = prvi_broj-drugi_broj
+		print(f"Razlika {rezultat}")
+		ispis_rezultat.insert(tk.END,str(rezultat))
+	
+	def handle_btn_pomnozi(event):
+		nonlocal ispis_rezultat
+		ispis_rezultat.delete(0,tk.END)
+		print(str(event))
+		prvi_broj = int(unos_prvi_broj.get())
+		drugi_broj = int(unos_drugi_broj.get())
+		rezultat = prvi_broj*drugi_broj
+		print(f"Razlika {rezultat}")
+		ispis_rezultat.insert(tk.END,str(rezultat))
+	
+	def handle_btn_podijeli(event):
+		nonlocal ispis_rezultat
+		ispis_rezultat.delete(0,tk.END)
+		print(str(event))
+		prvi_broj = int(unos_prvi_broj.get())
+		drugi_broj = int(unos_drugi_broj.get())
+		if drugi_broj == 0:
+			rezultat = "dijeljenje s nulom"
+		else:
+			rezultat = prvi_broj/drugi_broj
+		print(f"Razlika {rezultat:.2f}")
+		ispis_rezultat.insert(tk.END,str(rezultat))
+
+	root = tk.Tk()
+	root.title('Entry')
+	root.geometry('600x400')
+
+	lbl_prvi_broj = tk.Label(root,text='Prvi broj')
+	lbl_prvi_broj.grid(column=0,row=0,padx=5,pady=5)
+
+	unos_prvi_broj = tk.Entry(bd=3)
+	unos_prvi_broj.grid(column=1,row=0,padx=5,pady=5)
+
+	lbl_drugi_broj = tk.Label(root,text='Drugi broj')
+	lbl_drugi_broj.grid(column=0,row=1,padx=5,pady=5)
+
+	unos_drugi_broj = tk.Entry(bd=3)
+	unos_drugi_broj.grid(column=1,row=1,padx=5,pady=5)
+
+	btn_zbroji = tk.Button(root,text='zbroji +',command=zbroji)
+	btn_zbroji.grid(column=0,row=2,padx=5,pady=5)
+
+	btn_oduzmi = tk.Button(root,text='oduzmi -')
+	btn_oduzmi.grid(column=1,row=2,padx=5,pady=5)
+	btn_oduzmi.bind('<Button-1>',handle_btn_oduzmi)
+
+	btn_pomnozi = tk.Button(root,text='pomnozi *')
+	btn_pomnozi.grid(column=0,row=3,padx=5,pady=5)
+	btn_pomnozi.bind('<Button-1>',handle_btn_pomnozi)
+
+	btn_podijeli = tk.Button(root,text='podijeli /')
+	btn_podijeli.grid(column=1,row=3,padx=5,pady=5)
+	btn_podijeli.bind('<Button-1>',handle_btn_podijeli)
+
+	lbl_rezultat = tk.Label(root,text='Rezultat')
+	lbl_rezultat.grid(column=0,row=4,padx=5,pady=5)
+	ispis_rezultat = tk.Entry(bd=3)
+	ispis_rezultat.grid(column=1,row=4,padx=5,pady=5)
+
+
+
+
+	root.mainloop()
+
+# tkinter_basic_09()

@@ -1,0 +1,2 @@
+preporuka:
+kombinacija user id + pin

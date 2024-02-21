@@ -1019,21 +1019,6 @@ class Graphics():
 				"c_height" : 50
 			}
 			self.values = {}
-			default = 'grey'
-			self.palette = [
-				('0','light gray',default),
-				('1','dodger blue',default),
-				('2','lime green',default),
-				('3','red',default),
-				('4','blue',default),
-				('5','saddle brown',default),
-				('6','cyan',default),
-				('7','grey1',default),
-				('8','grey10',default),
-				(Board.values['hidden'],default,default),
-				(Board.values['empty'],default,default),
-				(Board.values['bomb'],'grey99','red'),
-				(Board.values['mark'],'red4',default)]
 
 			self.root = None
 
@@ -1057,22 +1042,52 @@ class Graphics():
 
 		class MSButton(tk.Button):
 
-			def __init__(self,parent,*args,**kwargs):
-				self.pixel = tk.PhotoImage(width=1,height=1)
+			def __init__(self,parent,coords,board,*args,**kwargs):
 				super().__init__(parent,*args,**kwargs)
-				self.config(image = self.pixel,compound='c')
-				# self.bind("<Button-1>",self.handle_press)
-				# self.bind("<Button-3>",self.handle_press)
 
-			def handle_press(self,coords,event):
-				print(coords)
-				print(event.button)
-				if self["state"]!=tk.DISABLED:
-					self.config(
-						state=tk.DISABLED,
-						relief=tk.SUNKEN
-					)
-		
+				self.pixel = tk.PhotoImage(width=1,height=1)
+				self.config(image = self.pixel,compound='c')
+
+				(self.i,self.j) = coords
+				self.bind('<Button-1>',lambda e: self.click(board,e))
+				self.bind('<Button-3>',lambda e: self.click(board,e))
+				# self.bind('<ButtonRelease>',lambda e: self.handle_press(board,e))
+
+				default = 'grey94'
+				self.palette = {
+					'0':['light gray',default],
+					'1':['dodger blue',default],
+					'2':['lime green',default],
+					'3':['red',default],
+					'4':['blue',default],
+					'5':['saddle brown',default],
+					'6':['cyan',default],
+					'7':['grey1',default],
+					'8':['grey10',default],
+					Board.values['hidden']:[default,default],
+					Board.values['empty']:[default,default],
+					Board.values['bomb']:['grey99','red'],
+					Board.values['mark']:['red4',default]}
+
+			def click(self,board:'Board',event:'tk.Event'):
+				if event.num == 1:
+					move = board.evaluate_move(self.i,self.j,0)
+				elif event.num == 3:
+					move = board.evaluate_move(self.i,self.j,1)
+
+				parent_name = event.widget.winfo_parent()
+				frame:'tk.Frame' = event.widget._nametowidget(parent_name)
+
+				for b in frame.children.values():
+					v=str(board.active[b.i][b.j])
+					if v!=Board.values['hidden']:
+						b.config(
+							text=v,
+							fg=b.palette[v][0],
+							bg=b.palette[v][1],
+							relief=tk.FLAT
+						)
+
 		class MSReset(tk.Button):
 
 			def __init__(self,parent,*args,**kwargs):
@@ -1117,6 +1132,8 @@ class Graphics():
 				for j in range(board.width):
 					button = msb(
 						self.frm_real,
+						(i,j),
+						board,
 						text=f"{board.real[i][j]}",
 						height=self.config["b_height"],
 						width=self.config["b_width"],
@@ -1159,6 +1176,8 @@ class Graphics():
 				for j in range(board.width):
 					button = msb(
 						self.frm_active,
+						(i,j),
+						board,
 						text="",
 						height=self.config["b_height"],
 						width=self.config["b_width"],
@@ -1166,6 +1185,7 @@ class Graphics():
 						pady=0,
 						state=tk.ACTIVE
 					)
+					
 					button.grid(row=i,column=j)
 					row.append(button)
 				self.el_active.append(row)
