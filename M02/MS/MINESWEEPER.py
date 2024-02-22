@@ -1068,50 +1068,52 @@ class Graphics():
 				width = 3
 			)
 
+			#smiley
+			self.style.configure(
+				'smiley.TButton',
+				relief='raised',
+				background='grey94',
+				font=('Lucida Console',12,'bold'),
+				padx=0,
+				pady=0,
+				width = 3
+			)
+
 		class MSButton(ttk.Button):
 
-			def __init__(self,parent,coords,board,lbl_bombs,*args,**kwargs):
+			def __init__(self,parent,coords,*args,**kwargs):
 				super().__init__(parent,*args,**kwargs)
-
 				(self.i,self.j) = coords
 
-				self.bind('<Button-1>',lambda e: self.click(board,lbl_bombs,e))
-				self.bind('<Button-3>',lambda e: self.click(board,lbl_bombs,e))
-
-			def click(self,board:'Board',lbl_bombs:'tk.Label',event:'tk.Event'):
-				# if event num = 1 > click = 0 | if event num = 3 > click = 1
-				move = board.evaluate_move(self.i,self.j,0 if event.num == 1 else 1)
-
-				if move == 'lost':
-					board.reveal_bombs()
-				elif move == 'win':
-					board.reveal_all()
-
+			def click(self,board:'Board',move,event:'tk.Event'):
 				parent_name = event.widget.winfo_parent()
 				frame:'tk.Frame' = event.widget._nametowidget(parent_name)
 
 				for b in frame.children.values():
 					if move == 'lost' or move == 'win':
-						b.bind('<Button-1>',lambda e: b.locked(board,lbl_bombs,e))
-						b.bind('<Button-3>',lambda e: b.locked(board,lbl_bombs,e))
+						b.bind('<Button-1>',lambda e: b.locked(e))
+						b.bind('<Button-3>',lambda e: b.locked(e))
 					v=str(board.active[b.i][b.j])
 					if v!=Board.values['hidden']:
 						b.config(text=v,style=f"{v}.TButton")
 					else:
 						b.config(text="",style=f"{v}.TButton")
-
-					# update bomb number:
-					lbl_bombs.configure(text=f"{board.get_bombs_remaining():0>3}")
-
-			def locked(self,board,lbl_bombs,event:'tk.Event'):
+			
+			def locked(self,event:'tk.Event'):
 				# nothing to do
 				...
 
-		class MSReset(tk.Button):
+		class MSReset(ttk.Button):
 
 			def __init__(self,parent,*args,**kwargs):
 				filepath = sys.path[0]+'\\'+"smiley.png"
-				self.img = tk.PhotoImage(file=filepath).subsample(20,20)
+				
+				from PIL import Image,ImageTk
+				self.img = ImageTk.PhotoImage(
+					Image.open(filepath).resize((20,20))
+				)
+
+				#self.img = tk.PhotoImage(file=filepath).subsample(20,20)
 				super().__init__(parent,*args,**kwargs)
 				self.config(image = self.img,compound='c')
 
@@ -1153,59 +1155,80 @@ class Graphics():
 			frm_comm.columnconfigure(1,weight=1)
 			frm_comm.columnconfigure(2,weight=1)
 
-			# import tkinter as tk
-			# def job():
-			# 	status.config(text="starting job")
-			# def countdown(time, msg='Counting down'):
-				
-			# 	time -= 1
-			# 	status.config(text=f'{msg} ({time}sec)')
-			# 	if time != 0:
-			# 		root.after(1000, countdown, time)
-			# 	else:
-			# 		job()  # if job is blocking then create a thread
-			# root = tk.Tk()
-			# status = tk.Label(root)
-			# status.pack()
-			# countdown(20)
-			# root.mainloop()
-
 			self.lbl_timer = tk.Label(frm_comm,text="---",
-						width=4,pady=2,background='black',foreground='red',
+						width=4,pady=5,background='black',foreground='red',
 						relief='sunken',bd=1,font=('Lucida Console',12,'bold'))
 			self.lbl_timer.grid(row=0,column=0,sticky=tk.W)
 
-			self.btn_reset = msr(frm_comm,text="",height=20,width=20,command=self.root.destroy)
+			def exit_game():
+				# disable counter for clean exit
+				if self.counter:
+					self.counter_stop()
+				# exit to menu
+				self.root.destroy()
+
+			self.btn_reset = msr(frm_comm,text="",style='smiley.TButton',command=exit_game)
 			self.btn_reset.grid(row=0,column=1)
 
 			self.lbl_bombs = tk.Label(frm_comm,text=f"{board.get_bombs_remaining():0>3}",
-						width=4,pady=2,background='black',foreground='red',
+						width=4,pady=5,background='black',foreground='red',
 						relief='sunken',bd=1,font=('Lucida Console',12,'bold'))
 			self.lbl_bombs.grid(row=0,column=2,sticky=tk.E)
+
+			def calc_move(event:'tk.Event'):
+				b = event.widget
+				# if event num = 1 > click = 0 | if event num = 3 > click = 1
+				move = board.evaluate_move(b.i,b.j,0 if event.num == 1 else 1)
+
+				if move == 'lost':					
+					board.reveal_bombs()
+					# disable counter for clean exit
+					self.counter_stop()
+					# change smiley to lost
+					self.style.configure('smiley.TButton',background='red')
+					#self.btn_reset.configure(text='X')
+
+				elif move == 'win':					
+					board.reveal_all()
+					# disable counter for clean exit
+					self.counter_stop()
+					# change smiley to win
+					self.style.configure('smiley.TButton',background='green')
+					#self.btn_reset.configure(text='O')
+
+				b.click(board,move,event)
+
+				# update bomb number:
+				self.lbl_bombs.configure(text=f"{board.get_bombs_remaining():0>3}")
 
 			# create grid for active board
 			for i in range(board.height):
 				for j in range(board.width):
-					msb(frm_active,(i,j),board,self.lbl_bombs,text="",
+					b = msb(frm_active,(i,j),text="",
 						style=f"{Board.values['hidden']}.TButton"
-					).grid(row=i,column=j)
+					)
+					b.bind('<Button-1>',calc_move)
+					b.bind('<Button-3>',calc_move)
+					b.grid(row=i,column=j)
 
 		def counter_start(self):
-			self.counter=self.counter_count(0)
+			self.counter_count(0)
 
 		def counter_stop(self):
+			self.root.after_cancel(self.counter)
 			self.counter=None
 		
 		def counter_count(self,time=0):
 			time+=1
 			self.lbl_timer.config(text=f"{time:0>3}")
-			self.root.after(1000,self.counter_count,time)
+			self.counter=self.root.after(1000,self.counter_count,time)
 		
 		def __enter__(self):
 			return self
 
-		def __exit__(self, exc_type, exc_value, exc_traceback):
-			...
+		def __exit__(self, exc_type=None, exc_value=None, exc_traceback=None):
+			if self.counter:
+				self.counter_stop()
 
 	def set_renderer(self,input_mode):
 		self.renderer = self.renderers[input_mode](self.config,self.values)

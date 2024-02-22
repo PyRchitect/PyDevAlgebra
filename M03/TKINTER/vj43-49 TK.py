@@ -82,7 +82,7 @@ def tkinter_basic_04():
 
 	root.mainloop()
 
-tkinter_basic_04()
+# tkinter_basic_04()
 
 def tkinter_basic_05():
 
@@ -127,7 +127,7 @@ def tkinter_basic_05():
 
 	root.mainloop()
 
-# tkinter_basic_05()
+tkinter_basic_05()
 	
 def tkinter_basic_06():
 
