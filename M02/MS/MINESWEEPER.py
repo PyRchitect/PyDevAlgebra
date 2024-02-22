@@ -1,9 +1,12 @@
 import os
+import sys
 import math
 import random as rn
 import itertools as it
 
 import urwid as uw
+import tkinter as tk
+import tkinter.ttk as ttk
 
 import tree_node as tn
 
@@ -25,7 +28,7 @@ class Interface():
 
 			self.text = text
 			self.sep = sep
-			self.end = end			
+			self.end = end
 
 		def show(self):
 			print(self.text,sep=self.sep,end=self.end)
@@ -36,12 +39,12 @@ class Interface():
 			   seps=' ',
 			   ends='\n',
 			   length=0):
-			
+
 			length = length or len(lines)
-						
+
 			def init_list(L,length,default):
 				return [default]*length if L==default else L
-			
+
 			lines = init_list(lines,length,'')
 			seps = init_list(seps,length,' ')
 			ends = init_list(ends,length,'\n')
@@ -49,7 +52,7 @@ class Interface():
 			self.messages = []
 			for (l,s,e) in zip(lines,seps,ends):
 				self.messages.append(Interface.SimpleMessage(l,s,e))
-		
+
 		def show(self):
 			for m in self.messages:
 				m.show()
@@ -61,13 +64,13 @@ class Interface():
 			   choice_type=None,
 			   choice_test=None,
 			   choice_error=None):
-			
+
 			self.choice_label = choice_label
 			self.choice_sep = choice_sep
 			self.choice_type = choice_type
 			self.choice_test = choice_test
 			self.choice_error = choice_error
-		
+
 		def get_input(self):
 			i_test = False
 			while i_test == False:
@@ -80,7 +83,7 @@ class Interface():
 
 					for i,c in enumerate(choice):
 						c = self.choice_type[i](c)
-						assert self.choice_test[i](c)						
+						assert self.choice_test[i](c)
 						choice[i] = c
 				except:
 					Interface.SimpleMessage(self.choice_error).show()
@@ -99,9 +102,9 @@ class Interface():
 			   choice_tests=None,
 			   choice_errors=None,
 			   length=0):
-			
+
 			length = length or len(choice_labels)
-			
+
 			def init_list(L,length,default):
 				return [default]*length if L==default else L
 
@@ -119,13 +122,13 @@ class Interface():
 				choice_tests,
 				choice_errors):
 				self.getters.append(Interface.SimpleGetter(cl,cs,ct,ctest,ce))
-		
+
 		def get_inputs(self):
 			choices = []
 			for g in self.getters:
 				choices.append(g.get_input())
 			return choices
-			
+
 	class SimpleMenu():
 		def __init__(self,
 			   title='',
@@ -146,7 +149,7 @@ class Interface():
 				choice_type,
 				choice_test,
 				choice_error)
-		
+
 		def show_text(self):
 			Interface.SimpleMessage('\n'+self.title).show()
 			Interface.SimpleMessage(Interface.separator).show()
@@ -155,10 +158,10 @@ class Interface():
 				Interface.SimpleMessage(option).show()
 
 			Interface.SimpleMessage(Interface.separator).show()
-		
+
 		def show_input(self):
 			return Interface.SimpleGetter.get_input(self.getter)
-		
+
 		def show(self):
 			os.system(Interface.cls_check())
 			self.show_text()
@@ -168,17 +171,17 @@ class Interface():
 		def __init__(self,data=None):
 			# set basic menu options (palette,etc.)
 			tn.TreeNode.__init__(self,data)
-		
+
 		def show_parents(self):
 			for parent in self.parents():
 				parent.data.show_text()
-		
+
 		def show_text(self):
 			self.data.show_text()
-		
+
 		def show_input(self):
 			return self.data.show_input()
-		
+
 		def show(self):
 			os.system(Interface.cls_check())
 			self.show_parents()
@@ -215,16 +218,16 @@ class Board():
 
 		self.active = self.init_board(Board.values['hidden'])
 		self.real = self.create_board(bombs)
-	
+
 	def init_board(self,symbol):
 		return [[symbol for _ in range(self.width)] for _ in range(self.height)]
 
 	def create_board(self,bombs):
 		# initialize board with zeroes
 		board = self.init_board(Board.values['zero'])
-	
+
 		# populate board with bombs on random positions
-		distribution = [*it.product(range(self.height),range(self.width))]		
+		distribution = [*it.product(range(self.height),range(self.width))]
 		self.bombs_pos_all = rn.sample(distribution,k=bombs)
 		for (r,c) in self.bombs_pos_all:
 			board[r][c] = Board.values['bomb']
@@ -238,7 +241,7 @@ class Board():
 		return board
 
 	def perimeter(self,r,c,type=8):
-		# reduce coordinates to cases (corner,side,inside):		
+		# reduce coordinates to cases (corner,side,inside):
 		def get_position(coordinate,dimension):
 			if coordinate == 0:
 				return 0
@@ -246,7 +249,7 @@ class Board():
 				return 1
 			else:
 				return 2
-			
+
 		# point = [row,col]
 		r = get_position(r,self.height)
 		c = get_position(c,self.width)
@@ -287,7 +290,7 @@ class Board():
 		if type == 8:
 			for d in test_diagonals[r][c]:
 				available.append(walk_diagonals[d])
-		
+
 		return available
 
 	def get_bombs_remaining(self):
@@ -320,7 +323,7 @@ class Board():
 						return 'bomb'
 				else:										# mark not bomb
 					return 'mark'
-			
+
 			elif a == Board.values['mark']:				# mark marked
 				self.active[r][c] = Board.values['hidden']	# clear mark
 				if v == Board.values['bomb']:				# unmark bomb
@@ -328,9 +331,9 @@ class Board():
 					return 'unmark'
 				else:										# unmark not bomb
 					return 'clear'
-	
+
 	def flood_fill(self,r,c):
-	
+
 		v = self.real[r][c]
 		# a = self.active[r][c]
 
@@ -344,7 +347,7 @@ class Board():
 			for (rp,cp) in self.perimeter(r,c,type=8):
 				if self.active[r+rp][c+cp] == Board.values['hidden']:
 					self.flood_fill(r+rp,c+cp)
-	
+
 	def reveal_all(self):
 		for r in range(self.height):
 			for c in range(self.width):
@@ -353,7 +356,7 @@ class Board():
 						self.active[r][c] = Board.values['empty']
 					else:
 						self.active[r][c] = self.real[r][c]
-					
+
 	def reveal_bombs(self):
 		for (r,c) in self.bombs_pos_all:
 			self.active[r][c] = Board.values['bomb']
@@ -383,10 +386,10 @@ class Menus():
 			g.choice_test = (lambda x: x in list(range(5+1)),)
 			g.choice_error = 'Pogresan unos!'
 			self.menu.getter = g
-		
+
 		def show(self):
 			return self.menu.show()
-	
+
 	class CustomSize():
 		def __init__(self):
 			mc = Board.config
@@ -406,7 +409,7 @@ class Menus():
 			errors = ('Pogresan unos!','Pogresan unos!')
 
 			self.gwh = Interface.MultiGetter(labels,seps,types,tests,errors)
-		
+
 		def show(self):
 			return self.gwh.get_inputs()
 
@@ -420,7 +423,7 @@ class Menus():
 			self.gb.choice_error = 'Pogresan unos!'
 
 		def show(self):
-			return self.gb.get_input()	
+			return self.gb.get_input()
 
 	class ModifyHSeparate():
 		def __init__(self,current_value):
@@ -481,7 +484,7 @@ class Menus():
 				lambda c: (c>=0 and c<=width),
 				lambda t: t in [0,1],)
 			self.move.choice_error = 'Pogresan unos!'
-		
+
 		def show(self):
 			result = self.move.get_input()
 			r = result[0]
@@ -517,7 +520,7 @@ class Menus():
 			menu.getter = c
 
 			return menu
-		
+
 		@staticmethod
 		def ConfigInput():
 			menu = Interface.SimpleMenu()
@@ -527,18 +530,19 @@ class Menus():
 			opt.append('[0] - izlaz')
 			opt.append('[1] - keyboard')
 			opt.append('[2] - mouse')
+			opt.append('[3] - window')
 			menu.options = opt
 
 			c = Interface.SimpleGetter()
-			c.choice_label = 'Odabir [0|1|2]: '
+			c.choice_label = 'Odabir [0|1|2|3]: '
 			c.choice_sep = ' '
 			c.choice_type = (int,)
-			c.choice_test = (lambda x: x in [0,1,2],)
+			c.choice_test = (lambda x: x in [0,1,2,3],)
 			c.choice_error = 'Pogresan unos!'
 			menu.getter = c
 
 			return menu
-		
+
 		@staticmethod
 		def ConfigDisplay():
 			menu = Interface.SimpleMenu()
@@ -570,7 +574,7 @@ class Graphics():
 		'v_spacing': 0,
 		'value_width': 1,
 		'axis_name_width':2}
-	
+
 	values ={
 		"h_space": ' ',
 		"v_space": ' ',
@@ -579,13 +583,13 @@ class Graphics():
 		"cross": '+',
 		"corner": 'X'}
 
-	def __init__(self,input_mode = 0):
+	def __init__(self,input_mode = 2):
 		r = range(len(self.renderers))
 		if input_mode not in r:
 			raise ValueError(f"Graphics input: {'|'.join(r)}")
 		self.set_renderer(input_mode)
 
-	class KeyboardMode():	
+	class KeyboardMode():
 
 		def __init__(self,config,values):
 			self.config = config
@@ -647,7 +651,7 @@ class Graphics():
 						board_separator+='\n'+sep
 						for _ in range(board.width+2):
 							board_separator+=vhst+sep
-				
+
 				# separator row:
 				if gc['h_separate']:
 					board_separator+='\n'+gv['cross']
@@ -660,7 +664,7 @@ class Graphics():
 						board_separator+='\n'+sep
 						for _ in range(board.width+2):
 							board_separator+=vhst+sep
-				
+
 				return board_separator
 
 			def add_corner_cell():
@@ -744,7 +748,7 @@ class Graphics():
 
 		def __enter__(self):
 			return self
-	
+
 		def __exit__(self, exc_type, exc_value, exc_traceback):
 			...
 
@@ -756,7 +760,7 @@ class Graphics():
 		def __init__(self,config,values):
 			self.config = config
 			self.values = values
-			self.palette = [ 
+			self.palette = [
 				('0','light gray','default'),
 				('1','light blue','default'),
 				('2','light green','default'),
@@ -776,7 +780,7 @@ class Graphics():
 				(self.values['cross'],'default','default'),
 				(self.values['corner'],'default','default'),
 				("ENDC",'default','default')]
-			
+
 			# to be populated with board data
 			self.offset = (0,0)
 			self.jump_size = (1,1)
@@ -817,7 +821,7 @@ class Graphics():
 						board_separator.append(('\n'+sep))
 						for _ in range(board.width+2):
 							board_separator.append((vhst+sep))
-				
+
 				# separator row:
 				if gc['h_separate']:
 					board_separator.append(('\n'+gv['cross']))
@@ -830,7 +834,7 @@ class Graphics():
 						board_separator.append(('\n'+sep))
 						for _ in range(board.width+2):
 							board_separator.append((vhst+sep))
-				
+
 				return board_separator
 
 			def add_corner_cell():
@@ -909,11 +913,11 @@ class Graphics():
 			image.append((Interface.separator))
 			image.append(("\n> UPUTA: polja se otkrivaju/označavaju klikovima miša"))
 			image.append(("\n> UPUTA: tip poteza: LC = iskopaj, RC = (od)markiraj"))
-			image.append(("\n> UPUTA: za izlaz iz igre umjesto poteza unesi [x]\n"))			
+			image.append(("\n> UPUTA: za izlaz iz igre umjesto poteza unesi [x]\n"))
 
 			# return self.MSEdit(image)
 			return image
-		
+
 		class MSEdit(uw.Text):
 			_selectable = True
 			signals = ['exit','click']
@@ -926,7 +930,7 @@ class Graphics():
 					self._emit('exit')
 				else:
 					return key
-			
+
 			def mouse_event(self,size,event,button,x,y,focus):
 				if not uw.util.is_mouse_press(event) or button not in [1,3]:
 					return False
@@ -939,7 +943,7 @@ class Graphics():
 
 		def __enter__(self):
 			return self
-	
+
 		def __exit__(self, exc_type, exc_value, exc_traceback):
 			...
 
@@ -955,7 +959,7 @@ class Graphics():
 			def add_v_sep_cols():
 				# ...+gc['v_separate']=1 ALWAYS+ ... because override = ' '
 				return gc['h_spacing']+1+gc['h_spacing']
-			
+
 			# SET JUMP SIZE:
 			self.jump_size = (add_h_sep_rows()+1,add_v_sep_cols()+1)
 
@@ -994,7 +998,7 @@ class Graphics():
 			c0 += 1						# value
 
 			self.offset = (r0,c0)
-			
+
 		def translate_move(self,r,c):
 			(rrem,rt) = math.modf((r - self.offset[0])/self.jump_size[0])
 			(crem,ct) = math.modf((c - self.offset[1])/self.jump_size[1])
@@ -1006,12 +1010,172 @@ class Graphics():
 			else:
 				return (False,False,False)
 
+	class WinMode():
+
+		def __init__(self,config,values):
+			self.config = {}
+			self.values = {}
+
+			default = 'grey94'
+			self.palette = {
+				'0':['light gray',default],
+				'1':['dodger blue',default],
+				'2':['lime green',default],
+				'3':['red',default],
+				'4':['blue',default],
+				'5':['saddle brown',default],
+				'6':['cyan',default],
+				'7':['grey1',default],
+				'8':['grey10',default],
+				Board.values['hidden']:[default,default],
+				Board.values['empty']:[default,default],
+				Board.values['bomb']:['grey99','red'],
+				Board.values['mark']:['red4',default]}
+
+			self.root = None
+			self.style = None
+		
+		def style_config(self):
+
+			self.style = ttk.Style(self.root)
+			self.style.theme_use('default')			
+
+			# style all active buttons
+			for k,v in self.palette.items():
+				self.style.configure(
+					f"{k}.TButton",
+					foreground=v[0],
+					relief='sunken',
+					background=v[1],
+					width = 3
+				)
+			# exeption: activate hidden button type
+			self.style.configure(f"{Board.values['hidden']}.TButton",relief='raised')
+			# exeption: activate marked button type
+			self.style.configure(f"{Board.values['mark']}.TButton",relief='raised')
+
+			# real board
+			self.style.configure(
+				'real.TButton',
+				foreground='black',
+				relief='groove',
+				width = 3
+			)
+
+		class MSButton(ttk.Button):
+
+			def __init__(self,parent,coords,board,lbl_bombs,*args,**kwargs):				
+				super().__init__(parent,*args,**kwargs)
+
+				(self.i,self.j) = coords
+
+				self.bind('<Button-1>',lambda e: self.click(board,lbl_bombs,e))
+				self.bind('<Button-3>',lambda e: self.click(board,lbl_bombs,e))
+
+			def click(self,board:'Board',lbl_bombs:'tk.Label',event:'tk.Event'):
+				# if event num = 1 > click = 0 | if event num = 3 > click = 1
+				move = board.evaluate_move(self.i,self.j,0 if event.num == 1 else 1)
+
+				if move == 'lost':
+					board.reveal_bombs()
+				elif move == 'win':
+					board.reveal_all()
+
+				parent_name = event.widget.winfo_parent()
+				frame:'tk.Frame' = event.widget._nametowidget(parent_name)
+
+				for b in frame.children.values():
+					if move == 'lost' or move == 'win':
+						b.bind('<Button-1>',lambda e: b.locked(board,lbl_bombs,e))
+						b.bind('<Button-3>',lambda e: b.locked(board,lbl_bombs,e))
+					v=str(board.active[b.i][b.j])
+					if v!=Board.values['hidden']:
+						b.config(text=v,style=f"{v}.TButton")
+					else:
+						b.config(text="",style=f"{v}.TButton")
+					
+					# update bomb number:
+					lbl_bombs.configure(text=f"{board.get_bombs_remaining():0>3}",width=10)					
+
+			def locked(self,board,lbl_bombs,event:'tk.Event'):
+				# nothing to do
+				...
+
+		class MSReset(tk.Button):
+
+			def __init__(self,parent,*args,**kwargs):
+				filepath = sys.path[0]+'\\'+"smiley.png"
+				self.img = tk.PhotoImage(file=filepath).subsample(20,20)
+				super().__init__(parent,*args,**kwargs)
+				self.config(image = self.img,compound='c')				
+
+		def root_config(self,board:'Board',title):
+
+			self.root=tk.Tk()
+			self.root.title = title
+			self.root.resizable(0,0)
+
+			# frame padding
+			pad = 10
+
+			# set button styles
+			self.style_config()
+
+			# create main areas (real, central, active)
+			frm_real = tk.Frame(self.root,padx=pad,pady=pad)
+			frm_comm = tk.Frame(self.root,padx=pad,pady=pad)
+			frm_active = tk.Frame(self.root,padx=pad,pady=pad)
+			
+			# attach main areas to grid
+			frm_real.pack()
+			frm_comm.pack(fill='x')
+			frm_active.pack()
+
+			# button subclasses alias
+			msb = Graphics.WinMode.MSButton
+			msr = Graphics.WinMode.MSReset
+
+			# create grid for real board
+			for i in range(board.height):
+				for j in range(board.width):
+					button = ttk.Button(frm_real,text=f"{board.real[i][j]}",style='real.TButton')
+					button.state(["disabled"])
+					button.grid(row=i,column=j)
+
+			# create tools ribbon
+			frm_comm.columnconfigure(0,weight=1)
+			frm_comm.columnconfigure(1,weight=1)
+			frm_comm.columnconfigure(2,weight=1)
+
+			lbl_timer = tk.Label(frm_comm,text="---",width=10)
+			lbl_timer.grid(row=0,column=0,sticky=tk.W)
+
+			btn_reset = msr(frm_comm,text="",height=20,width=20,command=self.root.destroy)
+			btn_reset.grid(row=0,column=1)
+
+			lbl_bombs = tk.Label(frm_comm,text=f"{board.get_bombs_remaining():0>3}",width=10)
+			lbl_bombs.grid(row=0,column=2,sticky=tk.E)
+
+			# create grid for active board
+			for i in range(board.height):
+				for j in range(board.width):
+					msb(frm_active,(i,j),board,lbl_bombs,text="",
+						style=f"{Board.values['hidden']}.TButton"
+					).grid(row=i,column=j)
+
+		def __enter__(self):
+			return self
+
+		def __exit__(self, exc_type, exc_value, exc_traceback):
+			...
+
 	def set_renderer(self,input_mode):
 		self.renderer = self.renderers[input_mode](self.config,self.values)
-	
+
 	KEYS = 0
 	MOUSE = 1
-	renderers = {KEYS: KeyboardMode, MOUSE: MouseMode}
+	WIN = 2
+	renderers = {KEYS: KeyboardMode, MOUSE: MouseMode, WIN: WinMode}
 
 class Game():
 	title = "MINESWEEPER"
@@ -1025,18 +1189,18 @@ class Game():
 		self.board = None
 		self.menus = Menus()
 		self.graphics = Graphics()
-	
+
 	def init_game(self,difficulty,settings):
 		if difficulty == Game.CUSTOM:
 			# appends/modifies 'custom' key in Board
 			Board.difficulty[Game.CUSTOM] = settings
 		self.board = Board(difficulty)
-	
+
 	def quit_game(self):
 		# cleaning, DB operatons, ...
 		Interface.SimpleMessage("Hvala i doviđenja").show()
 		# exit()
-	
+
 def configure(ms:'Game',node=None):
 
 	# if no node provided, initialize menu
@@ -1054,22 +1218,38 @@ def configure(ms:'Game',node=None):
 			configure(ms,node=node.children[0])
 			# open input settings
 		elif choice == 2:
-			configure(ms,node=node.children[1])
-			# open display settings
+			if ms.graphics.renderer.__class__ in [
+				ms.graphics.renderers[ms.graphics.KEYS],
+				ms.graphics.renderers[ms.graphics.MOUSE]
+				]:
+				# if in console mode open display settings
+				configure(ms,node=node.children[1])
+			else:
+				# if in win mode report no settings available
+				msg = []
+				msg.append("\n> Display settings unavailable in win mode")
+				msg.append("Press any key to return to menu . . .")
+				Interface.MultiMessage(msg).show()
+				input()
+				configure(ms,node=node)
 
 	elif title=="INPUT SETTINGS":
 		if choice == 0:
 			configure(ms,node=node.parent)
 			# return to previous menu
 		elif choice == 1:
-			ms.graphics.set_renderer(0)
+			ms.graphics.set_renderer(ms.graphics.KEYS)
 			# set input to keyboard
 			configure(ms,node=node.parent)
 		elif choice == 2:
-			ms.graphics.set_renderer(1)
+			ms.graphics.set_renderer(ms.graphics.MOUSE)
 			# set input to mouse
 			configure(ms,node=node.parent)
-	
+		elif choice == 3:
+			ms.graphics.set_renderer(ms.graphics.WIN)
+			# set input to window
+			configure(ms,node=node.parent)
+
 	elif title=="DISPLAY SETTINGS":
 		with ms.graphics.renderer as gr:
 			if choice == 0:
@@ -1100,7 +1280,7 @@ def play(ms:'Game'):
 
 	with ms.graphics.renderer as gr:
 		if gr.__class__ == ms.graphics.renderers[ms.graphics.KEYS]:
-			new_move = True	
+			new_move = True
 			while new_move == True:
 				gr.display(ms)
 				(r,c,t) = ms.menus.GetMove(ms.board.width,ms.board.height).show()
@@ -1125,7 +1305,7 @@ def play(ms:'Game'):
 
 		elif gr.__class__ == ms.graphics.renderers[ms.graphics.MOUSE]:
 			gr.set_offset(ms.board)
-			
+
 			def translate(widget,r_mouse,c_mouse,t_mouse):
 				nonlocal render
 				nonlocal caption
@@ -1157,14 +1337,18 @@ def play(ms:'Game'):
 			fill = uw.Filler(pile,'top')
 
 			loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=True)
-			loop.run()					
+			loop.run()
+
+		elif gr.__class__ == ms.graphics.renderers[ms.graphics.WIN]:			
+			gr.root_config(ms.board,ms.title)
+			gr.root.mainloop()
 
 def main():
 	ms = Game()
 
 	os.system('cls')
 	Interface.SimpleMessage(ms.title).show()
-	
+
 	new_game = True
 	while new_game:
 		(new_game,) = ms.menus.MainMenu().show()
