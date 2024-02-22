@@ -1034,11 +1034,11 @@ class Graphics():
 
 			self.root = None
 			self.style = None
-		
+
 		def style_config(self):
 
 			self.style = ttk.Style(self.root)
-			self.style.theme_use('default')			
+			self.style.theme_use('default')
 
 			# style all active buttons
 			for k,v in self.palette.items():
@@ -1064,7 +1064,7 @@ class Graphics():
 
 		class MSButton(ttk.Button):
 
-			def __init__(self,parent,coords,board,lbl_bombs,*args,**kwargs):				
+			def __init__(self,parent,coords,board,lbl_bombs,*args,**kwargs):
 				super().__init__(parent,*args,**kwargs)
 
 				(self.i,self.j) = coords
@@ -1093,9 +1093,9 @@ class Graphics():
 						b.config(text=v,style=f"{v}.TButton")
 					else:
 						b.config(text="",style=f"{v}.TButton")
-					
+
 					# update bomb number:
-					lbl_bombs.configure(text=f"{board.get_bombs_remaining():0>3}",width=10)					
+					lbl_bombs.configure(text=f"{board.get_bombs_remaining():0>3}")
 
 			def locked(self,board,lbl_bombs,event:'tk.Event'):
 				# nothing to do
@@ -1107,7 +1107,7 @@ class Graphics():
 				filepath = sys.path[0]+'\\'+"smiley.png"
 				self.img = tk.PhotoImage(file=filepath).subsample(20,20)
 				super().__init__(parent,*args,**kwargs)
-				self.config(image = self.img,compound='c')				
+				self.config(image = self.img,compound='c')
 
 		def root_config(self,board:'Board',title):
 
@@ -1123,9 +1123,9 @@ class Graphics():
 
 			# create main areas (real, central, active)
 			frm_real = tk.Frame(self.root,padx=pad,pady=pad)
-			frm_comm = tk.Frame(self.root,padx=pad,pady=pad)
+			frm_comm = tk.Frame(self.root,padx=pad,pady=pad,relief=tk.GROOVE,bd=1)
 			frm_active = tk.Frame(self.root,padx=pad,pady=pad)
-			
+
 			# attach main areas to grid
 			frm_real.pack()
 			frm_comm.pack(fill='x')
@@ -1147,13 +1147,17 @@ class Graphics():
 			frm_comm.columnconfigure(1,weight=1)
 			frm_comm.columnconfigure(2,weight=1)
 
-			lbl_timer = tk.Label(frm_comm,text="---",width=10)
+			lbl_timer = tk.Label(frm_comm,text="---",
+						width=4,pady=2,background='black',foreground='red',
+						relief='sunken',bd=1,font=('Lucida Console',12,'bold'))
 			lbl_timer.grid(row=0,column=0,sticky=tk.W)
 
 			btn_reset = msr(frm_comm,text="",height=20,width=20,command=self.root.destroy)
 			btn_reset.grid(row=0,column=1)
 
-			lbl_bombs = tk.Label(frm_comm,text=f"{board.get_bombs_remaining():0>3}",width=10)
+			lbl_bombs = tk.Label(frm_comm,text=f"{board.get_bombs_remaining():0>3}",
+						width=4,pady=2,background='black',foreground='red',
+						relief='sunken',bd=1,font=('Lucida Console',12,'bold'))
 			lbl_bombs.grid(row=0,column=2,sticky=tk.E)
 
 			# create grid for active board
@@ -1339,7 +1343,7 @@ def play(ms:'Game'):
 			loop = uw.MainLoop(fill,palette=gr.palette,handle_mouse=True)
 			loop.run()
 
-		elif gr.__class__ == ms.graphics.renderers[ms.graphics.WIN]:			
+		elif gr.__class__ == ms.graphics.renderers[ms.graphics.WIN]:
 			gr.root_config(ms.board,ms.title)
 			gr.root.mainloop()
 
