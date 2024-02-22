@@ -1034,6 +1034,12 @@ class Graphics():
 
 			self.root = None
 			self.style = None
+			self.counter = None
+
+			# tools accessors:
+			self.lbl_timer = None
+			self.btn_reset = None
+			self.btn_bombs = None
 
 		def style_config(self):
 
@@ -1147,26 +1153,54 @@ class Graphics():
 			frm_comm.columnconfigure(1,weight=1)
 			frm_comm.columnconfigure(2,weight=1)
 
-			lbl_timer = tk.Label(frm_comm,text="---",
+			# import tkinter as tk
+			# def job():
+			# 	status.config(text="starting job")
+			# def countdown(time, msg='Counting down'):
+				
+			# 	time -= 1
+			# 	status.config(text=f'{msg} ({time}sec)')
+			# 	if time != 0:
+			# 		root.after(1000, countdown, time)
+			# 	else:
+			# 		job()  # if job is blocking then create a thread
+			# root = tk.Tk()
+			# status = tk.Label(root)
+			# status.pack()
+			# countdown(20)
+			# root.mainloop()
+
+			self.lbl_timer = tk.Label(frm_comm,text="---",
 						width=4,pady=2,background='black',foreground='red',
 						relief='sunken',bd=1,font=('Lucida Console',12,'bold'))
-			lbl_timer.grid(row=0,column=0,sticky=tk.W)
+			self.lbl_timer.grid(row=0,column=0,sticky=tk.W)
 
-			btn_reset = msr(frm_comm,text="",height=20,width=20,command=self.root.destroy)
-			btn_reset.grid(row=0,column=1)
+			self.btn_reset = msr(frm_comm,text="",height=20,width=20,command=self.root.destroy)
+			self.btn_reset.grid(row=0,column=1)
 
-			lbl_bombs = tk.Label(frm_comm,text=f"{board.get_bombs_remaining():0>3}",
+			self.lbl_bombs = tk.Label(frm_comm,text=f"{board.get_bombs_remaining():0>3}",
 						width=4,pady=2,background='black',foreground='red',
 						relief='sunken',bd=1,font=('Lucida Console',12,'bold'))
-			lbl_bombs.grid(row=0,column=2,sticky=tk.E)
+			self.lbl_bombs.grid(row=0,column=2,sticky=tk.E)
 
 			# create grid for active board
 			for i in range(board.height):
 				for j in range(board.width):
-					msb(frm_active,(i,j),board,lbl_bombs,text="",
+					msb(frm_active,(i,j),board,self.lbl_bombs,text="",
 						style=f"{Board.values['hidden']}.TButton"
 					).grid(row=i,column=j)
 
+		def counter_start(self):
+			self.counter=self.counter_count(0)
+
+		def counter_stop(self):
+			self.counter=None
+		
+		def counter_count(self,time=0):
+			time+=1
+			self.lbl_timer.config(text=f"{time:0>3}")
+			self.root.after(1000,self.counter_count,time)
+		
 		def __enter__(self):
 			return self
 
@@ -1345,6 +1379,7 @@ def play(ms:'Game'):
 
 		elif gr.__class__ == ms.graphics.renderers[ms.graphics.WIN]:
 			gr.root_config(ms.board,ms.title)
+			gr.counter_start()
 			gr.root.mainloop()
 
 def main():
