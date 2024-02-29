@@ -990,24 +990,48 @@ class singleton_class:
 
 class DB():
 
+	# SQLite:
+
+	# class ConnParams(Enum):
+	# 	ECHO = False
+	# 	DIALECT = "sqlite"
+	# 	DBAPI = "pysqlite"
+	# 	DATABASE = "SmartKeyUsers.db"
+
+	# @staticmethod
+	# def create_conn_string():
+	# 	return	f"{DB.ConnParams.DIALECT.value}"	+ \
+	# 			f"+{DB.ConnParams.DBAPI.value}:"	+ \
+	# 			f"///{sys_path[0]}"+"\\"			+ \
+	# 			f"{DB.ConnParams.DATABASE.value}"
+
+	# SQLServer:
+
 	class ConnParams(Enum):
 		ECHO = False
-		DIALECT = "sqlite"
-		DBAPI = "pysqlite"
-		DATABASE = "SmartKeyUsers.db"
-
+		DRIVER='ODBC Driver 17 for SQL Server'
+		from platform import node
+		SERVER = node()
+		DATABASE='SmartKey'
+		TRUSTED_CONNECTION='yes'
+	
 	@staticmethod
 	def create_conn_string():
-		return	f"{DB.ConnParams.DIALECT.value}"	+ \
-				f"+{DB.ConnParams.DBAPI.value}:"	+ \
-				f"///{sys_path[0]}"+"\\"			+ \
-				f"{DB.ConnParams.DATABASE.value}"
+		cs = ''
+		cs+= f'DRIVER={DB.ConnParams.DRIVER.value};'
+		cs+= f'SERVER={DB.ConnParams.SERVER.value};'
+		cs+= f'DATABASE={DB.ConnParams.DATABASE.value};'
+		cs+= f'TRUSTED_CONNECTION={DB.ConnParams.TRUSTED_CONNECTION.value};'
+
+		return sa.engine.URL.create(
+			"mssql+pyodbc",query={"odbc_connect":cs})
 
 	def __init__(self):
 		self.engine = create_engine(
 			DB.create_conn_string(),
 			echo=DB.ConnParams.ECHO.value)
 		self.meta = MetaData()
+		u = self.engine.url
 
 		if not database_exists(self.engine.url):
 			create_database(self.engine.url)

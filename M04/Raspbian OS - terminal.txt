@@ -1,0 +1,22 @@
+pwd (print working directory) - trenutni folder
+
+ls (list): izlistavanje, kao dir u cmd
+> oznake: prije foldera D, prije filea crtica
+> -l: daje detalje direktorija
+> -a: all: daje sve elemente (i skrivene)
+
+navigacija
+> . ovaj folder
+> .. folder iznad
+
+kreiranje
+> touch - kreira datoteku
+> mkdir (make directory) - kreira folder
+> . (točka) na početku imena > skrivena datoteka
+
+> touch/mkdir ime{start..end} - kreira file/folder,
+prvi s imenom ...start, zadnji s imenom ...end
+
+> mv move (source) (destination)
+* acts also as rename if same folder
+> cp copy (source) (destination)
