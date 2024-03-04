@@ -1,22 +1,96 @@
-pwd (print working directory) - trenutni folder
+* razlikuje velika i mala slova
+
+* autocomplete: početi pisati pa tab
+
+wildcard
+> ? zamjenjuje jedan znak
+> * zamjenjuje više znakova
+
+pwd (print working directory)
+> ispisuje koji je trenutni folder
 
 ls (list): izlistavanje, kao dir u cmd
-> oznake: prije foldera D, prije filea crtica
+> oznake:
+d... folder
+-... file
+l... link
 > -l: daje detalje direktorija
 > -a: all: daje sve elemente (i skrivene)
+> mogu se spajati, npr -al daje detalje svih elemenata
 
-navigacija
+cd (change directory): mijenja folder
+cd ~ > prebacuje u user directory
+cd / > prebacuje u home directory
+> može se dati relativna ili apsolutna putanja
+> > relativna: ime foldera/...
+> > apsolutna: /.../...
 > . ovaj folder
 > .. folder iznad
 
-kreiranje
-> touch - kreira datoteku
-> mkdir (make directory) - kreira folder
-> . (točka) na početku imena > skrivena datoteka
+touch: kreira file
+mkdir (make directory): kreira folder
 
-> touch/mkdir ime{start..end} - kreira file/folder,
+> . (točka) na početku imena > skriveni file/folder
+> ime{start..end} - kreira fileove/foldere,
 prvi s imenom ...start, zadnji s imenom ...end
 
-> mv move (source) (destination)
-* acts also as rename if same folder
-> cp copy (source) (destination)
+mv (move) (source) (destination)
+cp (copy) (source) (destination)
+
+> funkcionira i kao rename ako je isti folder
+
+clear
+> briše ekran, kao cls
+
+sudo apt update
+> daje info što se može updateati
+
+sudo apt upgrade
+> izvršava updateanje
+
+> history - command history
+
+> cat - basic text reader
+> head - prvih 10 linija
+> tail - zadnjih 10 linija
+
+> -# broj linija
+
+> man (manual)
+
+> rm (remove)
+> -r (recursive) - briše rekurzivno sve unutra
+
+> rmdir (remove directory)
+
+> nano - basic text editor
+
+echo
+> vraća upis
+
+grep
+> grep (riječ) (file) - nađi riječ i ispiši
+> grep (riječ) (file) (>rezultat) - nađi riječ i ispiši u file
+
+wc (file)
+> word count (linije, riječi, znakovi)
+
+| - command pipe
+> proslijeđuje rezultat u slijedeću funkciju
+
+ping
+> zove stranicu
+> -c (count) koliko pingova
+
+chmod
+> prava pristupa(0-7,0-7,0-7)
+
+rwx
+421
+
+0(00) - bez prava
+4(00) - read prava
+5(00) - read + execute prava
+r: read
+w: write
+x: execute
