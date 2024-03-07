@@ -18,71 +18,69 @@ class tower_disk():
 		return f"{self.image:{Constants.DISK_NOT.value}^{self.width}}"
 
 class tower_stack():
-	def __init__(self,name,h=0,th=0):
+	def __init__(self,name,height=0,total_height=0):
 		self.name = name
-		self.total_height = th
-		self.height = h
-		if h == 0:
-			self.disks = []
-		else:
-			self.disks = [tower_disk(x,h) for x in range(1,h+1)]
+		self.total_height = total_height
+		self.height = height
+		self.disks = [tower_disk(x,height) for x in range(1,height+1)]
 
 	def pop(self):
-		disk = self.disks.pop(0)
+		disk = self.disks.pop(0)	# pop top disk
 		return disk
 
 	def push(self,new_disk):
 		self.disks.insert(0,new_disk)
 
 	def render(self):
-		image = []
-		image.append(f"{self.name}{Constants.NAME_DOT.value*(self.total_height*2-1)}")
+		image = [f"{self.name}{Constants.NAME_DOT.value*(self.total_height*2-1)}"]
 
 		for x in range(self.total_height - len(self.disks)):
-			# empty rows
+			# first render empty rows if there are any
 			image.append(Constants.DISK_NOT.value*self.total_height*2)
 
 		for x in self.disks:
-			# rows with disks
+			# then render rows with disks if there are any
 			image.append(str(x))
 
-		image
 		return image
 
 class board():
-	def __init__(self,images):
-		status = []
+	def __init__(self,heading,images):
+		self.heading = heading		
 		col_break = [" "*Constants.SPACING.value for _ in range(len(images[0]))]
+
+		status = []
 		for i in images:
 			status.append(i)
 			status.append(col_break)
 		self.status = list(zip(*status))
 
 	def show(self):
+		sleep(Constants.SLEEP_TIME.value)
+		system('cls')
+		print(f"{self.heading}:\n")
 		for s in self.status:
 			print(*s)
 
-def hanoi(n,source:'tower_stack',aux:'tower_stack',dest:'tower_stack'):
+def hanoi(n,source:'tower_stack',auxiliary:'tower_stack',destination:'tower_stack'):
 	if n>0:
-		hanoi(n-1,source,dest,aux)
+		hanoi(n-1,source,destination,auxiliary)		# flip destination and auxiliary
 
-		dest.push(source.pop())
+		destination.push(source.pop())				# move top disk source -> destination
 
-		render_list = sorted((source,dest,aux),key=lambda x: x.name)
-		sleep(Constants.SLEEP_TIME.value)
-		system('cls')
-		print("MOVE:\n")
-		board([t.render() for t in render_list]).show()
+		# stacks are different for each iteration, need to sort A,B,C for rendering
+		render_list = sorted((source,destination,auxiliary),key=lambda x: x.name)
+		board("MOVE",[t.render() for t in render_list]).show()
 
-		hanoi(n-1,aux,source,dest)
+		hanoi(n-1,auxiliary,source,destination)		# flip source and auxiliary
 
 def game(n):
-	towers = [tower_stack('A',n,n),tower_stack('B',0,n),tower_stack('C',0,n)]
-
-	sleep(Constants.SLEEP_TIME.value)
-	system('cls')
-	print("START:\n")
-	board([t.render() for t in towers]).show()
+	towers = 	[
+				tower_stack('A',n,n),
+				tower_stack('B',0,n),
+				tower_stack('C',0,n)
+				]
+	board("START",[t.render() for t in towers]).show()
 
 	hanoi(n,*towers)
 
