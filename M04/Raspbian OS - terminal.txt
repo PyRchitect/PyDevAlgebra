@@ -42,6 +42,19 @@ cp (copy) (source) (destination)
 clear
 > briše ekran, kao cls
 
+"TERM e.v. not set"!
+
+> To fix the error in your current session only:
+sudo su
+export TERM=xterm-256color
+
+> To permanently fix the error for all sessions owned by your current user:
+$ echo 'export TERM=xterm-256color' >> ~/.bashrc
+$ source ~/.bashrc
+
+> To permanently fix the error system wide for all users, update the variable inside of the /etc/environment file.
+$ sudo echo 'TERM=xterm-256color' >> /etc/environment
+
 sudo apt update
 > daje info što se može updateati
 

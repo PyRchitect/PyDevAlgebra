@@ -1,8 +1,13 @@
-from os import system
+from os import system as os_system,name as os_name
 from time import sleep
 from random import randint,sample
 from collections import deque
 from enum import Enum
+
+from sense_emu import SenseHat
+
+def cls_check():
+	return 'cls' if os_name =='nt' else 'clear'
 
 class PulseStream():
 
@@ -118,20 +123,45 @@ class SimplePulseStream(PulseStream):
 	class Constants(Enum):
 		ACTIVE_MARK = "O"
 		ACTIVE_CLEAR = "."
-		# ACTIVE_CLEAR = " "
+	
+	"""
+    palette = {'R': (255,0,0),
+               'G': (0,255,0),
+               'B': (0,0,255),
+               'K': (0,0,0),
+               'W': (255,255,255),
+               'Y': (255,255,0),
+               'C': (0,255,255),
+               'M': (255,0,255)}
+    """
+
+    def __init__(self,
+                 bandwidth,
+                 view_height,
+                 stream_rate = None,
+                 density = None,
+                 delay = None):
+        self.sense = SenseHat()
+        super().__init__(self,
+                         bandwidth,
+                         view_height,
+                         stream_rate = None,
+                         density = None,
+                         delay = None):
 
 	def create_pulse_object(self):	# API ENDPOINT
-		return SimplePulseStream.Constants.ACTIVE_MARK.value
+		# return SimplePulseStream.Constants.ACTIVE_MARK.value
+		return sample([0,255],k=3)
 
 	def create_pause_object(self):	# API ENDPOINT
-		return SimplePulseStream.Constants.ACTIVE_CLEAR.value
+		#return SimplePulseStream.Constants.ACTIVE_CLEAR.value
+        return (255,255,255)
 
 	def render_view(self):			# API ENDPOINT
-		system('cls')
-		for row in self.view:
-			for x in row:
-				print(x,end=' ')
-			print()
+		os_system(cls_check())
+		for row in range(len(self.height)):
+			for col in range(len(self.width)):
+				self.sense.set_pixel(row,col,self.view[row][col])
 
 def main():
 	try:
@@ -146,7 +176,7 @@ def main():
 		# very basic test to exclude nonsense inputs
 		assert (stream_rate>0 and stream_rate<2)
 		for arg in (bandwidth,view_height,density,delay):
-			assert arg in range(2,12+1)		
+			assert arg in range(1,50+1)		
 
 		stream = SimplePulseStream(
 			bandwidth,
