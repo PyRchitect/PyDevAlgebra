@@ -120,7 +120,7 @@ class PulseStream():
 		for _ in range(packets):
 			self.update_view()
 
-class SimplePulseStream(PulseStream):
+class RPiSenseHatStream(PulseStream):
 
 	def __init__(self,
 				 stream_rate = None,
@@ -165,10 +165,9 @@ def main():
 		# very basic test to exclude nonsense inputs
 		assert (stream_rate>0 and stream_rate<2)
 		for arg in (density,delay):
-			#assert arg in range(1,50+1)		
-			assert arg in range(1,1)		
+			assert arg in range(1,50+1)
 
-		stream = SimplePulseStream(
+		stream = RPiSenseHatStream(
 			stream_rate,
 			density,
 			delay)
