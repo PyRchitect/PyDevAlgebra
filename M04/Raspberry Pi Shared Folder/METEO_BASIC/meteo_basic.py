@@ -96,4 +96,4 @@ def ispisi_sr(stupac,redak,boja):
 
 ispisi_sr(0,5,Y)
 ispisi_sr(1,1,W)
-time.sleep(0.5)
+sleep(0.5)
