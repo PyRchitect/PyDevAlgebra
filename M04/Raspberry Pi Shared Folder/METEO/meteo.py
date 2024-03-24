@@ -90,7 +90,7 @@ class ScrolledListBox(AutoScroll, tk.Listbox):
 # </SCROLLBOX> - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # <WIDGETS>  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-class frmGumbi(ttk.LabelFrame):
+class frmTemp(ttk.LabelFrame):
 
 	def __init__(self,master):
 		self.root = master
@@ -827,54 +827,52 @@ class tkRoot(tk.Tk):
 		self.configure_basic()
 		self.style = self.style_config()
 
-		self.attach_default_frame()
-		self.frm_PIN = None
-		self.frm_DB = None
+		self.attach_frames()
+		self.attach_widgets()
 
 	def configure_basic(self):
-		self.title("SmartKey")
+		self.title("PROGNOZA")
 		self.resizable(0,0)
 
 		self.configure(
 			highlightcolor="SystemWindowText"
 		)
 
-	def attach_default_frame(self):
-		self.geometry("510x120")
-		self.frm_gumbi = frmGumbi(self)
-		self.frm_gumbi.place(x=15, y=10, height=100, width=480)
+	def attach_frames(self):
+		self.geometry("430x680")
+		
+		self.frm_temp = frmTemp(self)
+		self.frm_temp.place(x=15, y=15, height=250, width=400)
+		self.frm_vlaga = frmVlaga(self)
+		self.frm_vlaga.place(x=15, y=280, height=170, width=400)
+		self.frm_tlak = frmTlak(self)
+		self.frm_tlak.place(x=15, y=465, height=170, width=400)
+	
+	def attach_widgets(self):
 
-	def attach_PIN_frame(self):
-		self.geometry("510x500")
-		self.frm_PIN = frmPIN(self)
-		self.frm_PIN.place(x=15, y=125, height=360, width=480)
+		self.btn_spremi = ttk.Button(self)
+		self.btn_spremi.place(x=15, y=650, height=30, width=75, bordermode='ignore')
+		self.btn_spremi.configure(
+			style='btn_general.TButton',
+			command=self.save)
 
-	def detach_PIN_frame(self):
-		if self.frm_DB and self.frm_DB.winfo_exists():
-			self.detach_DB_frame()
-		if self.frm_PIN and self.frm_PIN.winfo_exists():
-			self.frm_PIN.destroy()
-			self.frm_PIN = None
-		self.geometry("510x120")
+		self.btn_izbrisi = ttk.Button(self)
+		self.btn_izbrisi.place(x=100, y=650, height=30, width=75, bordermode='ignore')
+		self.btn_izbrisi.configure(
+			style='btn_general.TButton',
+			command=self.delete)
 
-	def attach_DB_frame(self,mode,data):
-		if mode not in [x.value for x in frmDB.Modes]:
-			raise ValueError("Nepoznat mod korištenja!")
+		self.btn_pokreni = ttk.Button(self)
+		self.btn_pokreni.place(x=240, y=650, height=30, width=75, bordermode='ignore')
+		self.btn_pokreni.configure(
+			style='btn_general.TButton',
+			command=self.start)
 
-		# expand form, insert frame:
-		self.geometry("510x760")
-		if mode == frmDB.Modes.MODE_USER.value:
-			self.frm_DB = frmDB_user(self)
-		elif mode == frmDB.Modes.MODE_ADMIN.value:
-			self.frm_DB = frmDB_admin(self)
-
-		self.frm_DB.place(x=15, y=500, height=245, width=480)
-
-	def detach_DB_frame(self):
-		if self.frm_DB and self.frm_DB.winfo_exists():
-			self.frm_DB.destroy()
-			self.frm_DB = None
-		self.geometry("510x500")
+		self.btn_zaustavi = ttk.Button(self)
+		self.btn_zaustavi.place(x=325, y=650, height=30, width=75, bordermode='ignore')
+		self.btn_zaustavi.configure(
+			style='btn_general.TButton',
+			command=self.stop)
 
 	def style_config(self):
 		self.style = ttk.Style(self)
@@ -887,13 +885,7 @@ class tkRoot(tk.Tk):
 			relief='flat'
 		)
 		self.style.configure(
-			"btn_gumbi.TButton",
-			relief='groove',
-			compound='center',
-			font=('Segoe UI',12),
-		)
-		self.style.configure(
-			'lbl_PIN.TLabel',
+			'lbl_ugoda.TLabel',
 			background='white',
 			relief="solid",
 			font=('Segoe UI',12),
@@ -902,23 +894,13 @@ class tkRoot(tk.Tk):
 			compound='center'
 		)
 		self.style.configure(
-			'btn_PIN.TButton',
+			'btn_general.TButton',
 			relief='groove',
 			compound='center',
 			font=('Segoe UI',12),
 		)
 		self.style.configure(
-			'lbl_PIN_poruke.TLabel',
-			background='white',
-			relief="solid",
-			font=('Segoe UI',9),
-			padding=(2,2,2,2),
-			anchor='nw',
-			justify='left',
-			compound='left'
-		)
-		self.style.configure(
-			'lbl_unos.TLabel',
+			'lbl_naslov.TLabel',
 			font=('Segoe UI',9),
 			relief="flat",
 			anchor='w',
@@ -926,19 +908,12 @@ class tkRoot(tk.Tk):
 			compound='left'
 		)
 		self.style.configure(
-			'ent_unos.TEntry',
-			font=('Segoe UI',9),
+			'lbl_vrijednost.TLabel',
+			font=('Segoe UI',18),
+			relief="flat",
+			anchor='w',
+			justify='left',
 			compound='left'
-		)
-		self.style.configure(
-			'aktivan.TCheckbutton',
-			compound='left'
-		)
-		self.style.configure(
-			'btn_unos.TButton',
-			relief='groove',
-			font=('Segoe UI',9),
-			compound='center'
 		)
 
 	def tksleep(self,t):
@@ -994,7 +969,7 @@ class DB():
 		ECHO = False
 		DIALECT = "sqlite"
 		DBAPI = "pysqlite"
-		DATABASE = "SmartKeyUsers.db"
+		DATABASE = "meteo.db"
 
 	@staticmethod
 	def create_conn_string():
@@ -1014,26 +989,26 @@ class DB():
 		self.meta.reflect(bind=self.engine)
 		self.tables = self.meta.tables
 
-		users = self.tables.get("user_account")
-		if users is None:
-			self.create_user_table()
-			self.populate_user_data()
+		table_names = ["temperature","humidity","pressure"]
+		for table_name in table_names:
+			tbl = self.tables.get(table_name)
+			if tbl is None:
+				self.create_table(table_name)
+				self.populate_data()
 
-	def create_user_table(self):
+	def create_table(self,table_name):
 		Table(
-			"user_account",
+			table_name,
 			self.meta,
 			Column('id',Integer,primary_key=True),
-			Column('firstname',String),
-			Column('surname',String),
-			Column('PIN',String),
-			Column('active',Boolean),
-			Column('admin',Boolean)
+			Column('value',Integer),
+			Column('date',String),
+			Column('time',String)
 		)
 		self.meta.create_all(bind=self.engine)
 
-	def delete_user_data(self):
-		users = self.tables["user_account"]
+	def delete_data(self):
+		tbl = self.tables["user_account"]
 		stmt = delete(users)
 		with self.engine.begin() as conn:
 			conn.execute(stmt)
@@ -1059,7 +1034,7 @@ class DB():
 		with self.engine.begin() as conn:
 			conn.execute(stmt)
 
-	def populate_user_data(self):
+	def populate_data(self):
 
 		with self.engine.begin() as conn:
 			conn.execute(insert(self.tables["user_account"]),
