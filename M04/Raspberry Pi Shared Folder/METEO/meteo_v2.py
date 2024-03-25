@@ -1,8 +1,11 @@
 from sys import path as sys_path
 from datetime import datetime as dt
 from enum import Enum
+# img adjustments
 from PIL import Image,ImageTk
-
+# SSH to RPIs
+import paramiko
+# interface
 import tkinter as tk
 from tkinter import 	ttk,		\
 						messagebox
@@ -31,8 +34,68 @@ class IFOpenError(Exception):
 	def __str__(self):
 		return	"Pogreška pri otvaranju sučelja!"
 
-# </EXCEPTIONS> - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+class SensorConnectError(Exception):
+	def __str__(self):
+		return "Pogreška pri spajanju na senzor!"
 
+# </EXCEPTIONS> - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# <SENSORS>
+class SensorManager():
+
+	# ASSUME RPIs CONFIGURED IN PARENT APP!
+	
+	class SensorUnutra(Enum):
+		# equal to SensorIzvan ... only 1 emu can be spawned =(
+		IP = "192.168.0.15"
+		USER = "marin"
+		PKF = "C:\\Users\\Marin\\.ssh\\id_ed25519.key"
+	
+	class SensorIzvan(Enum):
+		# equal to SensorUnutra ... only 1 emu can be spawned =(
+		IP = "192.168.0.15"
+		USER = "marin"
+		PKF = "C:\\Users\\Marin\\.ssh\\id_ed25519.key"
+
+	def __init__(self):
+		self.sensor_unutra = SensorManager.ssh_connect(
+			self.SensorUnutra.IP.value,
+			self.SensorUnutra.USER.value,
+			self.SensorUnutra.PKF.value
+		)
+		self.sensor_izvan = SensorManager.ssh_connect(
+			self.SensorIzvan.IP.value,
+			self.SensorIzvan.USER.value,
+			self.SensorIzvan.PKF.value
+		)
+
+	@staticmethod
+	def ssh_connect(server_ip,user,private_key_file):
+		private_key = paramiko.Ed25519Key.from_private_key(private_key_file)
+
+		client = paramiko.SSHClient()
+		client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+		client.connect(server_ip,username=user,pkey=private_key)
+
+		return client
+
+	def check_process(client:"paramiko.SSHClient", process_name):
+		# get all running ps:
+		command = f"ps aux | grep {process_name}"
+		# execute command on server
+		_stdin, stdout, _stderr = client.exec_command(command)
+		# read output
+		lines = stdout.read().decode()
+		# close conn
+		client.close()
+		# check if exists among running ps:
+		return True if lines else False
+
+	def run_process(client:"paramiko.SSHClient", process_name):
+		stdin, stdout, stderr = client.exec_command(process_name)
+		client.close()
+		return (stdin, stdout, stderr)
+
+# </SENSORS>
 # <INTERFACE> - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # <SCROLLBOX> - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -104,12 +167,8 @@ class frmPostaja(ttk.LabelFrame):
 		self.unos_ugoda = None
 		# data from postaja
 		self.unos_postaja = tk.DoubleVar()
-		#self.get_data_postaja()
-
-		# # # TEST
-		self.unos_postaja.set(0)
-		self.unos_ugoda = 0
-		# # # TEST
+		self.unos_postaja.set("")
+		self.unos_ugoda = -1
 
 		self.configure_basic()
 
@@ -128,6 +187,11 @@ class frmPostaja(ttk.LabelFrame):
 			text="Meteo podaci [C]")
 
 	def init_images(self):
+
+		path_get = sys_path[0]+'\\'+f"IKONE_get.png"
+		self.img_get = ImageTk.PhotoImage(
+					Image.open(path_get).resize((25,25))
+					)
 
 		for x in range(4):
 			path_active = sys_path[0]+'\\'+f"IKONE_{x}_active.jpg"
@@ -174,6 +238,10 @@ class frmPostaja(ttk.LabelFrame):
 		for x in self.unos_ugoda_bracket:
 			if t > x:
 				self.unos_ugoda += 1
+		
+		# adjust label images
+		for i in range(4):	
+			self.set_label_image(i)
 
 	def attach_widgets(self):
 
@@ -189,6 +257,13 @@ class frmPostaja(ttk.LabelFrame):
 			)
 			self.lbl_ugoda_v[i].place(x=15+i*(39+8), y=30, height=39, width=39, bordermode='ignore')
 			self.set_label_image(i)
+
+		btn_get = ttk.Button(self)
+		btn_get.place(x=346, y=30, height=39, width=39, bordermode='ignore')
+		btn_get.configure(
+			style='btn_get.TButton',
+			image=self.img_get,
+			command=self.get_data_postaja)
 
 class frmBasic(ttk.LabelFrame):
 
@@ -210,10 +285,14 @@ class frmBasic(ttk.LabelFrame):
 
 		self.attach_widgets()
 
+		self.init_sensors()
 		# needs to set unutar, izvan values
 		self.get_sensor_data()
 
 		self.refresh_list(self.data_column)
+
+	def init_sensors(self):
+		...
 
 	# - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	# functions different for each mode
@@ -440,6 +519,12 @@ class tkRoot(tk.Tk):
 		)
 		self.style.configure(
 			'btn_general.TButton',
+			relief='groove',
+			compound='center',
+			font=('Segoe UI',9),
+		)
+		self.style.configure(
+			'btn_get.TButton',
 			relief='groove',
 			compound='center',
 			font=('Segoe UI',9),
