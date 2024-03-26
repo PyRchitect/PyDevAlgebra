@@ -204,7 +204,7 @@ class SensorManager():
 	class RPiUnutar(Enum):
 		NAME = 'unutar'
 		# equal to Izvan ... only 1 emu can be spawned =(
-		IP = "192.168.0.21"
+		IP = "192.168.1.21"
 		USER = "marin"
 		PKF = "C:\\Users\\Marin\\.ssh\\id_ed25519"		# private key file
 		SF = "/media/sf_Raspberry_Pi_Shared_Folder"		# shared folder
@@ -212,7 +212,7 @@ class SensorManager():
 	class RPiIzvan(Enum):
 		NAME = 'izvan'
 		# equal to Unutar ... only 1 emu can be spawned =(
-		IP = "192.168.0.22"
+		IP = "192.168.1.22"
 		USER = "marin"
 		PKF = "C:\\Users\\Marin\\.ssh\\id_ed25519"		# private key file
 		SF = "/media/sf_Raspberry_Pi_Shared_Folder"		# shared folder
@@ -582,6 +582,8 @@ class tkRoot(tk.Tk):
 		self.lokacija = lokacija
 		# live sensor reading
 		self.probe = None
+		# thread ordering
+		self.probe_thread = None
 
 		super().__init__()
 
@@ -680,7 +682,7 @@ class tkRoot(tk.Tk):
 		# enable stop button
 		self.btn_zaustavi.configure(state = 'normal')
 
-		self.probe_read(0)
+		self.probe_read()
 
 	def probe_stop(self):
 		self.after_cancel(self.probe)
@@ -697,13 +699,23 @@ class tkRoot(tk.Tk):
 		# disable stop button
 		self.btn_zaustavi.configure(state = 'disabled')
 	
-	def probe_read(self,time=0):
-		time+=1	# not really needed, maybe for TO DO timer
-		self.show_reading()
-		self.probe = self.after(1000,self.probe_read,time)
+	def probe_read(self):
+		# self.show_reading()
+
+		def worker():
+			self.show_reading()
+			self.probe_thread = None
+		
+		if self.probe_thread == None:
+			self.probe_thread = Thread(target=worker)
+			self.probe_thread.start()
+		# else:
+		# 	Thread(target=worker).join()
+
+		self.probe = self.after(2000,self.probe_read)
 
 	def show_reading(self):
-		def worker():
+
 			self.frm_temp.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('temp'))
 			self.frm_temp.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('temp'))
 		
@@ -713,7 +725,6 @@ class tkRoot(tk.Tk):
 			self.frm_tlak.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('tlak'))
 			self.frm_tlak.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('tlak'))
 
-		Thread(target=worker).start()
 
 	def clear_reading(self):
 		self.frm_temp.unos_unutar.set("")

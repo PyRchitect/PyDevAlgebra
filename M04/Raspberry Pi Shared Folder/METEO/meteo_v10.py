@@ -1,6 +1,7 @@
 from sys import path as sys_path			# working folder
 from datetime import datetime as dt			# get date time now
-from threading import Thread				# background processing
+from threading import 	Thread,		\
+	 					Event as tEvent		# background processing
 from enum import Enum						# const enumeration
 
 from PIL import Image,ImageTk				# img adjustments
@@ -203,7 +204,6 @@ class SensorManager():
 	
 	class RPiUnutar(Enum):
 		NAME = 'unutar'
-		# equal to Izvan ... only 1 emu can be spawned =(
 		IP = "192.168.0.21"
 		USER = "marin"
 		PKF = "C:\\Users\\Marin\\.ssh\\id_ed25519"		# private key file
@@ -211,7 +211,6 @@ class SensorManager():
 	
 	class RPiIzvan(Enum):
 		NAME = 'izvan'
-		# equal to Unutar ... only 1 emu can be spawned =(
 		IP = "192.168.0.22"
 		USER = "marin"
 		PKF = "C:\\Users\\Marin\\.ssh\\id_ed25519"		# private key file
@@ -582,6 +581,9 @@ class tkRoot(tk.Tk):
 		self.lokacija = lokacija
 		# live sensor reading
 		self.probe = None
+		# thread ordering
+		self.probe_thread = None
+		self._probe_kill = tEvent()
 
 		super().__init__()
 
@@ -680,12 +682,14 @@ class tkRoot(tk.Tk):
 		# enable stop button
 		self.btn_zaustavi.configure(state = 'normal')
 
-		self.probe_read(0)
+		self.probe_read()
 
 	def probe_stop(self):
+		self._probe_kill.set()
 		self.after_cancel(self.probe)
 		self.probe = None
-
+		# wait a bit until probes return
+		self.tksleep(3)
 		self.clear_reading()
 
 		# disable save button
@@ -697,13 +701,25 @@ class tkRoot(tk.Tk):
 		# disable stop button
 		self.btn_zaustavi.configure(state = 'disabled')
 	
-	def probe_read(self,time=0):
-		time+=1	# not really needed, maybe for TO DO timer
-		self.show_reading()
-		self.probe = self.after(1000,self.probe_read,time)
+	def probe_killed(self):
+		return self._probe_kill.isSet()
+	
+	def probe_read(self):
+
+		def worker():
+			if self.probe_killed():
+				return
+			self.show_reading()
+			self.probe_thread = None			
+		
+		if self.probe_thread == None:
+			self.probe_thread = Thread(target=worker)
+			self.probe_thread.start()
+
+		self.probe = self.after(1000,self.probe_read)
 
 	def show_reading(self):
-		def worker():
+
 			self.frm_temp.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('temp'))
 			self.frm_temp.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('temp'))
 		
@@ -712,8 +728,6 @@ class tkRoot(tk.Tk):
 		
 			self.frm_tlak.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('tlak'))
 			self.frm_tlak.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('tlak'))
-
-		Thread(target=worker).start()
 
 	def clear_reading(self):
 		self.frm_temp.unos_unutar.set("")
@@ -768,7 +782,6 @@ class tkRoot(tk.Tk):
 			state='normal',
 			style='btn_general.TButton',
 			command=self.probe_start)
-			# command=self.show_reading)	# # # TEST
 
 		self.btn_zaustavi = ttk.Button(self)
 		self.btn_zaustavi.place(x=340, y=635, height=30, width=75, bordermode='ignore')

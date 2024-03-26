@@ -212,7 +212,7 @@ class SensorManager():
 	class RPiIzvan(Enum):
 		NAME = 'izvan'
 		# equal to Unutar ... only 1 emu can be spawned =(
-		IP = "192.168.0.21"
+		IP = "192.168.0.22"
 		USER = "marin"
 		PKF = "C:\\Users\\Marin\\.ssh\\id_ed25519"		# private key file
 		SF = "/media/sf_Raspberry_Pi_Shared_Folder"		# shared folder
@@ -764,7 +764,8 @@ class tkRoot(tk.Tk):
 			text='Pokreni',
 			state='normal',
 			style='btn_general.TButton',
-			command=self.probe_start)
+			command=self.show_reading)
+			#command=self.probe_start)
 
 		self.btn_zaustavi = ttk.Button(self)
 		self.btn_zaustavi.place(x=340, y=635, height=30, width=75, bordermode='ignore')
