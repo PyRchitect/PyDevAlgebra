@@ -1,9 +1,11 @@
 from sys import path as sys_path			# working folder
 from datetime import datetime as dt			# get date time now
+from time import sleep						# separate data readings
 from enum import Enum						# const enumeration
 from PIL import Image,ImageTk				# img adjustments
 from sense_emu import SenseHat				# RPi sense hat
 import paramiko								# SSH to RPIs
+import random as rn							# test hat randomization
 import tkinter as tk						# interface
 from tkinter import 	ttk,		\
 						messagebox
@@ -49,10 +51,11 @@ class SensorSSH():
 		self.user = user
 		self.sf = sf
 
-		from io import StringIO		
-		self.pkf = StringIO(open(pkf).read())
+		from io import StringIO
+		pkf = StringIO(open(pkf).read())	# convert to stream
+		self.pk = paramiko.Ed25519Key.from_private_key(pkf)
 
-		self.hat = SenseHat()
+		self.client = self.ssh_connection()
 
 		# attempt to start GUI (probe connection)
 		process_name = 'sense_emu_gui'
@@ -61,29 +64,25 @@ class SensorSSH():
 		except:
 			raise SensorConnectError
 		
-		self.get_temp()
-		self.get_vlaga()
-		self.get_tlak()
-		print()
+		temp = self.get_data('temp')
+		vlaga = self.get_data('vlaga')
+		tlak = self.get_data('tlak')
 
-	def ssh_connect(self):
-		private_key = paramiko.Ed25519Key.from_private_key(self.pkf)
-
+	def ssh_connection(self):
 		client = paramiko.SSHClient()
 		client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-		client.connect(self.ip,username=self.user,pkey=private_key)
-
 		return client	
 	
 	def start_process(self, process_name):
-		client:'paramiko.SSHClient' = self.ssh_connect()
+		self.client.connect(self.ip,username=self.user,pkey=self.pk)
 
 		# get count of process:
 		command = f"pgrep -c {process_name}"
 		# execute command on server
-		_stdin, stdout, _stderr = client.exec_command(command)
+		_stdin, stdout, _stderr = self.client.exec_command(command)
 		# read output
 		count = int(stdout.read().decode())
+
 		# check if exists among running ps:
 		if count == 0:
 			# if not running, spawn process:
@@ -94,48 +93,31 @@ class SensorSSH():
 
 			# launch directly from session
 			launch = "export DISPLAY=:0;sense_emu_gui"
-			_stdin, stdout, stderr = client.exec_command(launch)
+			_stdin, stdout, stderr = self.client.exec_command(launch)
 
 			# launch from launcher script placed on the PI
 			# launch = f"export DISPLAY=:0;python {self.sf}/sense_emu_gui_launcher.py"
 			# _stdin, stdout, stderr = client.exec_command(launch)
-			print()
 
 		# close conn
-		client.close()
+		self.client.close()
 
-	def get_temp(self):
-		client:'paramiko.SSHClient' = self.ssh_connect()
-		# launch from launcher script placed on the PI
-		launch = f"export DISPLAY=:0;python {self.sf}/sense_emu_gui_temp.py"
-		_stdin, stdout, _stderr = client.exec_command(launch)
-		# close conn
-		client.close()
-
-		temp = stdout.read().decode()
-		return temp
-
-	def get_vlaga(self):
-		client:'paramiko.SSHClient' = self.ssh_connect()
-		# launch from launcher script placed on the PI
-		launch = f"export DISPLAY=:0;python {self.sf}/sense_emu_gui_vlaga.py"
-		_stdin, stdout, _stderr = client.exec_command(launch)
-		# close conn
-		client.close()
-
-		vlaga = stdout.read().decode()
-		return vlaga
-	
-	def get_tlak(self):
-		client:'paramiko.SSHClient' = self.ssh_connect()
-		# launch from launcher script placed on the PI
-		launch = f"export DISPLAY=:0;python {self.sf}/sense_emu_gui_tlak.py"
-		_stdin, stdout, _stderr = client.exec_command(launch)
-		# close conn
-		client.close()
-
-		tlak = stdout.read().decode()
-		return tlak
+	def get_data(self,data_type):
+		try:
+			self.client.connect(self.ip,username=self.user,pkey=self.pk)
+			# launch from launcher script placed on the PI
+			launch = f"export DISPLAY=:0;python {self.sf}/sense_emu_gui_{data_type}.py"
+			_stdin, stdout, _stderr = self.client.exec_command(launch)
+			# close conn
+			self.client.close()
+			
+			# assert stdout.read().decode()
+		except:
+			raise SensorConnectError
+		else:
+			# data = round(float(stdout.read().decode().strip("\n")),1)
+			data = stdout.read().decode()
+			return data
 
 class SensorDummy():
 	# dummy RPi for testing if no SSH
@@ -151,6 +133,10 @@ class SensorDummy():
 			self.start_process(process_name)
 		except:
 			raise SensorConnectError
+		
+		# temp = self.get_data('temp')
+		# vlaga = self.get_data('vlaga')
+		# tlak = self.get_data('tlak')
 	
 	def start_process(self,process_name):
 		from subprocess import Popen, PIPE, STDOUT
@@ -179,14 +165,15 @@ class SensorDummy():
 				close_fds=True
 				)
 
-	def get_temp(self):
-		return self.hat.get_temperature()
-
-	def get_vlaga(self):
-		return self.hat.get_humidity()
-	
-	def get_tlak(self):
-		return self.hat.get_pressure()
+	def get_data(self,data_type):
+		if data_type not in ['temp','vlaga','tlak']:
+			raise ValueError("SH environment: Unknown data type!")
+		elif data_type == 'temp':
+			return self.hat.get_temperature()
+		elif data_type == 'vlaga':
+			return self.hat.get_humidity()
+		elif data_type == 'tlak':
+			return self.hat.get_pressure()
 
 class SensorTest():
 	# demo RPi returns random values for testing
@@ -194,15 +181,27 @@ class SensorTest():
 	def __init__(self,name):
 		self.type = "Test"
 		self.name = name
+		
+		# temp = self.get_data('temp')
+		# vlaga = self.get_data('vlaga')
+		# tlak = self.get_data('tlak')
 
-		self.hat = None
+	def get_data(self,data_type):
+		if data_type not in ['temp','vlaga','tlak']:
+			raise ValueError("SH environment: Unknown data type!")
+		elif data_type == 'temp':
+			return round(rn.uniform(-15,35))
+		elif data_type == 'vlaga':
+			return round(rn.uniform(0,100))
+		elif data_type == 'tlak':
+			return round(rn.uniform(950,1050))
 
 class SensorManager():
 
 	# ASSUME RPIs CONFIGURED IN PARENT APP!
 	
-	class RPiUnutra(Enum):
-		NAME = 'unutra'
+	class RPiUnutar(Enum):
+		NAME = 'unutar'
 		# equal to Izvan ... only 1 emu can be spawned =(
 		IP = "192.168.0.21"
 		USER = "marin"
@@ -211,7 +210,7 @@ class SensorManager():
 	
 	class RPiIzvan(Enum):
 		NAME = 'izvan'
-		# equal to SensorUnutra ... only 1 emu can be spawned =(
+		# equal to Unutar ... only 1 emu can be spawned =(
 		IP = "192.168.0.21"
 		USER = "marin"
 		PKF = "C:\\Users\\Marin\\.ssh\\id_ed25519"		# private key file
@@ -219,30 +218,29 @@ class SensorManager():
 
 	def __init__(self):
 
-		self.RPis = []
+		self.RPis = {}
 
-		for RPi in [self.RPiUnutra,self.RPiIzvan]:
+		for RPi in [self.RPiUnutar,self.RPiIzvan]:
 			# test RPi connection:
 			try:
 				# attempt to create ssh clients:
 				# IF SSH DON'T NEED TO RUN HOST PROCESS ON PI
-				self.RPis.append(
-					SensorSSH(
+				self.RPis[RPi.NAME.value] = SensorSSH(
 						RPi.NAME.value,
 						RPi.IP.value,
 						RPi.USER.value,
 						RPi.PKF.value,
 						RPi.SF.value
 						)
-					)
 			except:
-				# attempt to create dummy clients:
-				# IF NO SSH MUST RUN ON PI TO START DUMMIES
 				try:
-					self.RPis.append(SensorDummy(RPi.NAME.value))
+					# attempt to create dummy clients:
+					# IF NO SSH MUST RUN ON RPi TO START DUMMIES
+					self.RPis[RPi.NAME.value] = SensorDummy(RPi.NAME.value)
 				except:
+					# no SSH RPi, no local RPi, fallback
 					# create test clients (return defaults)
-					self.RPis.append(SensorTest(RPi.NAME.value))
+					self.RPis[RPi.NAME.value] = SensorTest(RPi.NAME.value)
 
 # </SENSORS>
 # <INTERFACE> - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -500,7 +498,7 @@ class frmBasic(ttk.LabelFrame):
 			selectmode=tk.BROWSE,
 			background="white",
 			disabledforeground="#b4b4b4",
-			font=('Segoe UI',9),
+			font=('Segoe UI',7),
 			foreground="black",
 			highlightcolor="#d9d9d9",
 			selectbackground="#d9d9d9",
@@ -525,8 +523,8 @@ class frmTemp(frmBasic):
 		return 'temp'
 	
 	def get_sensor_data(self):
-		self.unos_unutar.set("00")
-		self.unos_izvan.set("00")
+		self.unos_unutar.set("")
+		self.unos_izvan.set("")
 
 	def configure_basic(self):
 		self.configure(
@@ -544,8 +542,8 @@ class frmVlaga(frmBasic):
 		return 'vlaga'
 	
 	def get_sensor_data(self):
-		self.unos_unutar.set("00")
-		self.unos_izvan.set("00")
+		self.unos_unutar.set("")
+		self.unos_izvan.set("")
 
 	def configure_basic(self):
 		self.configure(
@@ -563,21 +561,21 @@ class frmTlak(frmBasic):
 		return 'tlak'
 	
 	def get_sensor_data(self):
-		self.unos_unutar.set("0000")
-		self.unos_izvan.set("0000")
+		self.unos_unutar.set("")
+		self.unos_izvan.set("")
 
 	def configure_basic(self):
 		self.configure(
 			style='frm.TLabelframe',
-			text="Vlažnost [%]")
+			text="Tlak [hPa][mbar]")
 
 class tkRoot(tk.Tk):
 
 	def __init__(self,DB_link,SM_link):
 		# database link
-		self.DB_link = DB_link
+		self.DB_link:'DB' = DB_link
 		# sensor manager link
-		self.SM_link = SM_link
+		self.SM_link:'SensorManager' = SM_link
 
 		super().__init__()
 
@@ -596,16 +594,56 @@ class tkRoot(tk.Tk):
 		)
 
 	def save(self):
-		...
+		tu = self.frm_temp.unos_unutar
+		tv = self.frm_temp.unos_izvan
+	
+		hu = self.frm_vlaga.unos_unutar
+		hv = self.frm_vlaga.unos_izvan
+	
+		pu = self.frm_tlak.unos_unutar
+		pv = self.frm_tlak.unos_izvan
+
+		# NOW
+
+		# APPEND
 	
 	def delete(self):
-		...
+		# only 1 table in DB so it doesn't matter
+		# no choosing, might as well pick from inst
+		self.DB_link.delete_data_all(
+			self.DB_link.table_name
+		)
+
+		# refresh all lists
+		self.frm_temp.refresh_list(
+			self.frm_temp.data_column
+		)
+		self.frm_vlaga.refresh_list(
+			self.frm_vlaga.data_column
+		)
+		self.frm_tlak.refresh_list(
+			self.frm_tlak.data_column
+		)
 	
 	def start(self):
-		...
+		self.frm_temp.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('temp'))
+		self.frm_temp.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('temp'))
+	
+		self.frm_vlaga.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('vlaga'))
+		self.frm_vlaga.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('vlaga'))
+	
+		self.frm_tlak.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('tlak'))
+		self.frm_tlak.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('tlak'))
 	
 	def stop(self):
-		...
+		self.frm_temp.unos_unutar.set("")
+		self.frm_temp.unos_izvan.set("")
+	
+		self.frm_vlaga.unos_unutar.set("")
+		self.frm_vlaga.unos_izvan.set("")
+	
+		self.frm_tlak.unos_unutar.set("")
+		self.frm_tlak.unos_izvan.set("")
 
 	def attach_frames(self):
 		self.geometry("430x680")
@@ -636,7 +674,7 @@ class tkRoot(tk.Tk):
 			command=self.delete)
 		
 		# collect loaded sensor type initials into a string
-		sensor_types = f"< {' | '.join([x.type[0] for x in self.SM_link.RPis])} >"
+		sensor_types = f"< {' | '.join([x.type[0] for x in self.SM_link.RPis.values()])} >"
 
 		lbl_sensor = ttk.Label(self,text=sensor_types,style='lbl_sensor.TLabel')
 		lbl_sensor.place(x=185, y=635, height=30, width=60, bordermode='ignore')
@@ -737,7 +775,7 @@ try:
 							Column,			\
 							String,			\
 							Integer,		\
-							Boolean
+							Float
 
 	from sqlalchemy_utils import	database_exists,	\
 									create_database
@@ -798,9 +836,12 @@ class DB():
 			self.table_name,
 			self.meta,
 			Column('id',Integer,primary_key=True),
-			Column('temp',Integer),
-			Column('vlaga',Integer),
-			Column('tlak',Integer),
+			Column('temp_unutar',Float),
+			Column('temp_izvan',Float),
+			Column('vlaga_unutar',Float),
+			Column('vlaga_izvan',Float),
+			Column('tlak_unutar',Float),
+			Column('tlak_izvan',Float),
 			Column('date',String),
 			Column('time',String)
 		)
@@ -817,22 +858,36 @@ class DB():
 		with self.engine.begin() as conn:
 			conn.execute(insert(self.tables[self.table_name]),
 				[
-					{"temp":20,"vlaga":50,"tlak":1020,"date":"2024-03-20","time":"10:00:00"},
-					{"temp":21,"vlaga":51,"tlak":1021,"date":"2024-03-21","time":"11:00:00"},
-					{"temp":22,"vlaga":52,"tlak":1022,"date":"2024-03-22","time":"12:00:00"},
-					{"temp":23,"vlaga":53,"tlak":1023,"date":"2024-03-23","time":"13:00:00"},
-					{"temp":24,"vlaga":54,"tlak":1024,"date":"2024-03-24","time":"14:00:00"},
+					{	"temp_unutar":20,"vlaga_unutar":50,"tlak_unutar":1020,
+						"temp_izvan":16,"vlaga_izvan":40,"tlak_izvan":1010,
+	  					"date":"2024-03-20","time":"10:00:00"},
+						  
+					{	"temp_unutar":21,"vlaga_unutar":51,"tlak_unutar":1021,
+						"temp_izvan":17,"vlaga_izvan":41,"tlak_izvan":1011,
+	  					"date":"2024-03-21","time":"11:00:00"},
+						  
+					{	"temp_unutar":22,"vlaga_unutar":52,"tlak_unutar":1022,
+						"temp_izvan":18,"vlaga_izvan":42,"tlak_izvan":1012,
+	  					"date":"2024-03-22","time":"12:00:00"},
+						  
+					{	"temp_unutar":23,"vlaga_unutar":53,"tlak_unutar":1023,
+						"temp_izvan":19,"vlaga_izvan":43,"tlak_izvan":1013,
+	  					"date":"2024-03-23","time":"13:00:00"},
+						  
+					{	"temp_unutar":24,"vlaga_unutar":54,"tlak_unutar":1024,
+						"temp_izvan":20,"vlaga_izvan":44,"tlak_izvan":1014,
+	  					"date":"2024-03-24","time":"14:00:00"},
 				]
 			)
 
-	def display_data(self):
+	def _display_data(self):		# internal, for testing
 		for table_name,table_object in self.tables.items():
 			print(f"\n> table: {table_name}")
 			with self.engine.connect() as conn:
 				for row in conn.execute(select(table_object)):
 					print(row)
 
-	def check_id(self,id):
+	def _check_id(self,id):			# internal, for testing
 		tbl = self.tables[self.table_name]
 
 		condition_id = (tbl.c.id == id)
@@ -851,16 +906,19 @@ class DB():
 		if data_type not in ['temp','vlaga','tlak']:
 			raise ValueError("Unknown data type!")
 		
+		# both sensors baked into data selection
+		# if needed separately, pass sensor as arg
 		stmt = select(
-			(tbl.columns[data_type]).label(data_type),
-			(tbl.c.date).label("date"),
-			(tbl.c.time).label("time"),
+			(tbl.columns[f"{data_type}_unutar"]),
+			(tbl.columns[f"{data_type}_izvan"]),
+			(tbl.c.date),
+			(tbl.c.time),
 			)
 		with self.engine.connect() as conn:
 			result = conn.execute(stmt)
 
 		# # # !
-		rl = [f"{x[0]:>4} : {x[1]} {x[2]}" for x in result]
+		rl = [f"{x[0]:>4} | {x[1]:>4} : {x[2]} {x[3]}" for x in result]
 		return rl
 
 	def insert_data(self,data):
