@@ -571,6 +571,8 @@ class tkRoot(tk.Tk):
 		self.DB_link:'DB' = DB_link
 		# sensor manager link
 		self.SM_link:'SensorManager' = SM_link
+		# live sensor reading
+		self.probe = None
 
 		super().__init__()
 
@@ -631,8 +633,8 @@ class tkRoot(tk.Tk):
 		# refresh all lists
 		self.refresh_all_lists()
 
-		# disable save button
-		self.btn_spremi.configure(state = 'disabled')
+		# disable save button > no (continuous reading!)
+		# self.btn_spremi.configure(state = 'disabled')
 		# enable delete button
 		self.btn_izbrisi.configure(state = 'normal')
 		# start button unchanged
@@ -659,16 +661,7 @@ class tkRoot(tk.Tk):
 		# stop button unchanged
 		#
 	
-	def start(self):
-		self.frm_temp.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('temp'))
-		self.frm_temp.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('temp'))
-	
-		self.frm_vlaga.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('vlaga'))
-		self.frm_vlaga.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('vlaga'))
-	
-		self.frm_tlak.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('tlak'))
-		self.frm_tlak.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('tlak'))
-
+	def probe_start(self):	
 		# enable save button
 		self.btn_spremi.configure(state = 'normal')
 		# delete button unchanged
@@ -677,16 +670,14 @@ class tkRoot(tk.Tk):
 		self.btn_pokreni.configure(state = 'disabled')
 		# enable stop button
 		self.btn_zaustavi.configure(state = 'normal')
-	
-	def stop(self):
-		self.frm_temp.unos_unutar.set("")
-		self.frm_temp.unos_izvan.set("")
-	
-		self.frm_vlaga.unos_unutar.set("")
-		self.frm_vlaga.unos_izvan.set("")
-	
-		self.frm_tlak.unos_unutar.set("")
-		self.frm_tlak.unos_izvan.set("")
+
+		self.probe_read(0)
+
+	def probe_stop(self):
+		self.after_cancel(self.probe)
+		self.probe = None
+
+		self.clear_reading()
 
 		# disable save button
 		self.btn_spremi.configure(state = 'disabled')
@@ -696,6 +687,31 @@ class tkRoot(tk.Tk):
 		self.btn_pokreni.configure(state = 'normal')
 		# disable stop button
 		self.btn_zaustavi.configure(state = 'disabled')
+	
+	def probe_read(self,time=0):
+		time+=1	# not really needed, maybe for TO DO timer
+		self.show_reading()
+		self.probe = self.after(1000,self.probe_read,time)
+
+	def show_reading(self):
+		self.frm_temp.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('temp'))
+		self.frm_temp.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('temp'))
+	
+		self.frm_vlaga.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('vlaga'))
+		self.frm_vlaga.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('vlaga'))
+	
+		self.frm_tlak.unos_unutar.set(self.SM_link.RPis["unutar"].get_data('tlak'))
+		self.frm_tlak.unos_izvan.set(self.SM_link.RPis["izvan"].get_data('tlak'))
+	
+	def clear_reading(self):
+		self.frm_temp.unos_unutar.set("")
+		self.frm_temp.unos_izvan.set("")
+	
+		self.frm_vlaga.unos_unutar.set("")
+		self.frm_vlaga.unos_izvan.set("")
+	
+		self.frm_tlak.unos_unutar.set("")
+		self.frm_tlak.unos_izvan.set("")
 
 	def attach_frames(self):
 		self.geometry("430x680")
@@ -739,7 +755,7 @@ class tkRoot(tk.Tk):
 			text='Pokreni',
 			state='normal',
 			style='btn_general.TButton',
-			command=self.start)
+			command=self.probe_start)
 
 		self.btn_zaustavi = ttk.Button(self)
 		self.btn_zaustavi.place(x=340, y=635, height=30, width=75, bordermode='ignore')
@@ -747,7 +763,7 @@ class tkRoot(tk.Tk):
 			text='Zaustavi',
 			state='disabled',
 			style='btn_general.TButton',
-			command=self.stop)
+			command=self.probe_stop)
 
 	def style_config(self):
 		self.style = ttk.Style(self)
@@ -806,6 +822,13 @@ class tkRoot(tk.Tk):
 			justify='left',
 			compound='left'
 		)
+
+	def __enter(self):
+		return self
+	
+	def __exit__(self,exc_type=None,exc_value=None,exc_traceback=None):
+		if self.probe:
+			self.probe_stop()
 
 	def tksleep(self,t):
 		# emulate time.sleep(seconds)
